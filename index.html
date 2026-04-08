@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProcureFlow Pro — Raffles Consolidated</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0D1117; --bg2:#161B22; --bg3:#1C2128; --bg4:#21262D; --bg5:#2D333B;
+  --border:#30363D; --border2:#484F58;
+  --txt:#E6EDF3; --muted:#8B949E; --subtle:#6E7681;
+  --blue:#58A6FF; --blue-d:#1F6FEB; --blue-bg:rgba(56,139,253,.12);
+  --green:#3FB950; --green-bg:rgba(63,185,80,.12);
+  --yellow:#D29922; --yellow-bg:rgba(187,128,9,.12);
+  --red:#F85149; --red-bg:rgba(248,81,73,.12);
+  --purple:#BC8CFF; --purple-bg:rgba(188,140,255,.12);
+  --orange:#F0883E; --orange-bg:rgba(240,136,62,.12);
+  --teal:#39D353;
+  --sh1:0 1px 3px rgba(0,0,0,.3);
+  --sh2:0 4px 20px rgba(0,0,0,.5);
+  --sh3:0 16px 56px rgba(0,0,0,.6);
+  --r:12px; --tr:.18s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{color-scheme:dark;}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:13.5px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:8px;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes toastIn{from{transform:translateX(115%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes toastOut{to{transform:translateX(115%);opacity:0}}
+@keyframes barGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes ripple{to{transform:scale(4.5);opacity:0}}
+@keyframes glowLine{0%,100%{opacity:.6}50%{opacity:1}}
+@keyframes numUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.app{display:flex;min-height:100vh;}
+
+/* ─── SIDEBAR ─── */
+.sb{width:242px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;transition:width var(--tr);}
+.sb.col{width:58px;}
+.sb-brand{padding:18px 15px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
+.sb-logo{width:36px;height:36px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,var(--blue-d),var(--blue));display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 2px 12px rgba(88,166,255,.3);}
+.sb-txt{overflow:hidden;transition:opacity var(--tr);}
+.sb.col .sb-txt{opacity:0;width:0;}
+.sb-n{font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--txt);}
+.sb-s{font-size:10px;color:var(--muted);margin-top:1px;}
+.nav-g{padding:14px 11px 4px;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--subtle);text-transform:uppercase;white-space:nowrap;overflow:hidden;transition:opacity var(--tr);}
+.sb.col .nav-g{opacity:0;}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-radius:8px;margin:1px 7px;font-size:13px;color:var(--muted);transition:all var(--tr);position:relative;overflow:hidden;white-space:nowrap;}
+.ni:hover{background:var(--bg4);color:var(--txt);}
+.ni.on{background:var(--blue-bg);color:var(--blue);}
+.ni.on::before{content:'';position:absolute;left:0;top:22%;height:56%;width:3px;background:var(--blue);border-radius:0 3px 3px 0;}
+.ni-ic{font-size:15px;width:19px;text-align:center;flex-shrink:0;}
+.ni-lb{overflow:hidden;transition:opacity var(--tr);}
+.sb.col .ni-lb{opacity:0;width:0;}
+.np{margin-left:auto;background:var(--red);color:#fff;font-size:9px;padding:1px 7px;border-radius:20px;font-weight:700;transition:opacity var(--tr);}
+.sb.col .np{opacity:0;}
+.sb-ft{margin-top:auto;padding:11px 7px;border-top:1px solid var(--border);}
+.u-r{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background var(--tr);}
+.u-r:hover{background:var(--bg4);}
+.u-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#1F6FEB,#3FB950);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.u-inf{overflow:hidden;transition:opacity var(--tr);}
+.sb.col .u-inf{opacity:0;width:0;}
+.u-nm{font-size:12px;color:var(--txt);font-weight:600;}
+.u-rl{font-size:10px;color:var(--muted);}
+
+/* ─── TOPBAR ─── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 22px;height:54px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;}
+.tb-tog{background:none;border:none;cursor:pointer;padding:6px;border-radius:7px;color:var(--muted);font-size:18px;transition:all var(--tr);}
+.tb-tog:hover{background:var(--bg4);color:var(--txt);}
+.tb-ti{font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--txt);flex:1;}
+.tb-r{display:flex;align-items:center;gap:8px;}
+.conn-chip{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);padding:4px 10px;border-radius:20px;background:var(--bg3);border:1px solid var(--border);white-space:nowrap;}
+.cd{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.cd.ok{background:var(--green);animation:pulse 3s infinite;}
+.cd.err{background:var(--red);}
+.cd.ld{background:var(--yellow);animation:pulse .8s infinite;}
+.srch{position:relative;}
+.srch input{padding:7px 13px 7px 34px;border:1px solid var(--border);border-radius:20px;font-size:12px;width:185px;outline:none;background:var(--bg3);color:var(--txt);transition:all var(--tr);font-family:inherit;}
+.srch input:focus{width:230px;background:var(--bg4);border-color:var(--blue);box-shadow:0 0 0 3px rgba(88,166,255,.1);}
+.srch input::placeholder{color:var(--subtle);}
+.srch::before{content:'⌕';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--subtle);pointer-events:none;}
+
+/* ─── BUTTONS ─── */
+.btn{padding:7px 15px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;font-size:12.5px;font-weight:600;color:var(--txt);transition:all var(--tr);display:inline-flex;align-items:center;gap:6px;font-family:inherit;position:relative;overflow:hidden;white-space:nowrap;}
+.btn:hover{background:var(--bg4);border-color:var(--border2);}
+.btn-pri{background:var(--blue-d);color:#fff;border-color:var(--blue-d);}
+.btn-pri:hover{background:var(--blue);box-shadow:0 4px 14px rgba(31,111,235,.4);}
+.btn-grn{background:rgba(63,185,80,.18);color:var(--green);border-color:rgba(63,185,80,.35);}
+.btn-grn:hover{background:rgba(63,185,80,.28);}
+.btn-sm{padding:4px 10px;font-size:11.5px;border-radius:7px;}
+.rpl{position:absolute;border-radius:50%;background:rgba(255,255,255,.15);animation:ripple .5s linear;pointer-events:none;}
+
+.content{flex:1;overflow-y:auto;padding:20px 22px;}
+.view{display:none;animation:fadeUp .28s ease both;}
+.view.on{display:block;}
+
+/* ─── STAT CARDS ─── */
+.srow{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:16px;}
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;position:relative;overflow:hidden;transition:all var(--tr);animation:fadeUp .4s ease both;}
+.sc:nth-child(1){animation-delay:.04s}.sc:nth-child(2){animation-delay:.08s}
+.sc:nth-child(3){animation-delay:.12s}.sc:nth-child(4){animation-delay:.16s}
+.sc:hover{transform:translateY(-3px);box-shadow:var(--sh2);border-color:var(--border2);}
+.sc-bar{position:absolute;top:0;left:0;right:0;height:3px;}
+.sc-glow{position:absolute;top:-25px;right:-25px;width:100px;height:100px;border-radius:50%;opacity:.07;}
+.sc-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:13px;}
+.sc-ic{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.sc-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;}
+.sc-lb{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px;}
+.sc-vl{font-size:28px;font-weight:800;color:var(--txt);margin:4px 0 3px;line-height:1;letter-spacing:-1.5px;font-family:'Sora',sans-serif;animation:numUp .5s ease both;}
+.sc-su{font-size:11px;color:var(--muted);}
+
+/* ─── CARDS ─── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:border-color var(--tr);}
+.card:hover{border-color:var(--border2);}
+.ch{padding:13px 17px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.ct{font-size:13px;font-weight:700;color:var(--txt);}
+.cb{padding:15px 17px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;margin-bottom:13px;}
+
+/* ─── TABLE ─── */
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th{background:var(--bg3);color:var(--muted);font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:9px 13px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);}
+td{padding:10px 13px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle;transition:background var(--tr);}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:var(--bg3);}
+.ri{animation:fadeUp .3s ease both;}
+
+/* ─── BADGES ─── */
+.bdg{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;white-space:nowrap;gap:4px;}
+.bdot{width:5px;height:5px;border-radius:50%;background:currentColor;animation:pulse 2s infinite;}
+.bdg-draft{background:var(--bg5);color:var(--muted);}
+.bdg-pending{background:var(--yellow-bg);color:var(--yellow);}
+.bdg-approved{background:var(--green-bg);color:var(--green);}
+.bdg-rejected{background:var(--red-bg);color:var(--red);}
+.bdg-submitted{background:var(--blue-bg);color:var(--blue);}
+.bdg-completed{background:var(--green-bg);color:var(--teal);}
+.bdg-overdue{background:var(--red-bg);color:var(--red);}
+.bdg-selected{background:var(--green-bg);color:var(--green);}
+.bdg-purple{background:var(--purple-bg);color:var(--purple);}
+
+/* ─── PROGRESS ─── */
+.prog{height:6px;background:var(--bg4);border-radius:4px;overflow:hidden;}
+.pf{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1);}
+
+/* ─── FORMS ─── */
+.fg{margin-bottom:13px;}
+.fl{display:flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+.req{color:var(--red);font-size:13px;}
+.fc{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--txt);background:var(--bg3);outline:none;transition:all var(--tr);font-family:inherit;}
+.fc:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(88,166,255,.1);background:var(--bg4);}
+.fc:hover:not(:focus){border-color:var(--border2);}
+.fc::placeholder{color:var(--subtle);}
+select.fc option{background:var(--bg3);}
+.fhint{font-size:11px;color:var(--muted);margin-top:3px;}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.tot-box{background:var(--blue-bg);border:1px solid rgba(88,166,255,.25);border-radius:9px;padding:12px 15px;margin-bottom:13px;display:flex;align-items:center;gap:10px;}
+.tot-box span{font-size:12px;color:var(--blue);}
+.tot-box strong{font-size:19px;font-weight:800;color:var(--txt);margin-left:auto;font-family:'Sora',sans-serif;letter-spacing:-.5px;}
+
+/* ─── UPLOAD ZONE ─── */
+.upz{border:2px dashed var(--border2);border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:all var(--tr);background:var(--bg3);}
+.upz:hover,.upz.drag{border-color:var(--blue);background:var(--blue-bg);}
+.upz.done{border-color:var(--green);border-style:solid;background:var(--green-bg);}
+.upz input{display:none;}
+.uz-ic{font-size:28px;margin-bottom:7px;}
+.uz-ti{font-size:13px;font-weight:700;color:var(--txt);}
+.uz-su{font-size:11.5px;color:var(--muted);margin-top:3px;}
+.uz-file{margin-top:9px;display:inline-flex;align-items:center;gap:6px;background:var(--green-bg);border:1px solid rgba(63,185,80,.3);border-radius:7px;padding:5px 12px;font-size:12px;color:var(--green);font-weight:600;font-family:'JetBrains Mono',monospace;}
+.flink{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--blue);font-weight:600;text-decoration:none;padding:4px 10px;background:var(--blue-bg);border-radius:7px;border:1px solid rgba(88,166,255,.2);transition:all var(--tr);}
+.flink:hover{background:rgba(88,166,255,.25);color:#fff;}
+
+/* ─── MODAL ─── */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);z-index:1000;align-items:center;justify-content:center;padding:16px;}
+.mo.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:720px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.6);animation:scaleIn .2s ease;}
+.mh{padding:17px 21px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg2);z-index:2;}
+.mt{font-size:15px;font-weight:800;color:var(--txt);font-family:'Sora',sans-serif;}
+.mx{background:var(--bg3);border:1px solid var(--border);font-size:14px;cursor:pointer;color:var(--muted);padding:5px 10px;border-radius:7px;transition:all var(--tr);}
+.mx:hover{background:var(--red-bg);color:var(--red);}
+.mb{padding:20px 21px;}
+.mf{padding:13px 21px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;background:var(--bg3);}
+
+/* ─── TABS ─── */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:14px;gap:2px;}
+.tbb{padding:8px 14px;border:none;background:none;cursor:pointer;font-size:12.5px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all var(--tr);border-radius:7px 7px 0 0;font-family:inherit;font-weight:500;}
+.tbb:hover{color:var(--txt);background:var(--bg3);}
+.tbb.on{color:var(--blue);font-weight:700;border-bottom-color:var(--blue);background:var(--blue-bg);}
+
+/* ─── TIMELINE ─── */
+.tl{list-style:none;}
+.tli{display:flex;gap:12px;padding-bottom:16px;position:relative;}
+.tli::before{content:'';position:absolute;left:5px;top:14px;bottom:0;width:1.5px;background:var(--border);}
+.tli:last-child::before{display:none;}
+.tld{width:12px;height:12px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:3px;z-index:1;position:relative;box-shadow:0 0 0 3px rgba(88,166,255,.15);}
+.tld.ok{background:var(--green);box-shadow:0 0 0 3px rgba(63,185,80,.15);}
+.tld.err{background:var(--red);box-shadow:0 0 0 3px rgba(248,81,73,.15);}
+.tl-ti{font-weight:700;font-size:13px;color:var(--txt);}
+.tl-su{font-size:11px;color:var(--muted);margin-top:2px;}
+.tl-q{font-size:12px;margin-top:7px;padding:7px 11px;background:var(--bg3);border-radius:7px;border-left:3px solid var(--blue);color:var(--muted);font-style:italic;}
+.tl-q.ok{border-left-color:var(--green);}
+.tl-q.err{border-left-color:var(--red);}
+
+/* ─── STATUS FLOW ─── */
+.sf{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:18px;}
+.ss{padding:5px 12px;border-radius:7px;font-size:10.5px;font-weight:700;}
+.ss.done{background:var(--green-bg);color:var(--green);}
+.ss.cur{background:var(--blue-d);color:#fff;}
+.ss.nxt{background:var(--bg4);color:var(--subtle);}
+.sa{color:var(--border2);font-size:15px;padding:0 2px;}
+
+/* ─── KPI ─── */
+.kr{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.kpi{background:var(--bg3);border-radius:9px;padding:12px;text-align:center;border:1px solid var(--border);}
+.kpi.dk{background:var(--blue-d);border-color:var(--blue-d);}
+.kv{font-size:17px;font-weight:800;color:var(--txt);letter-spacing:-.5px;font-family:'Sora',sans-serif;}
+.kpi.dk .kv{color:#fff;}
+.kl{font-size:9.5px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;}
+.kpi.dk .kl{color:rgba(255,255,255,.55);}
+
+/* ─── QUOT CARDS ─── */
+.qc{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;background:var(--bg3);transition:all var(--tr);}
+.qc:hover{border-color:var(--blue);}
+.qc.sel{border-color:var(--green);background:rgba(63,185,80,.06);}
+.qc.low{border-color:var(--blue);}
+.qct{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;}
+.qcv{font-weight:800;font-size:14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:var(--txt);}
+.qcp{font-size:20px;font-weight:800;color:var(--txt);font-family:'Sora',sans-serif;}
+.qm{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:11px;color:var(--muted);}
+.qml{font-size:9px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;}
+.qm strong{display:block;color:var(--txt);font-size:12.5px;font-weight:700;margin-top:2px;}
+
+/* ─── MINI CARDS ─── */
+.minis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 15px;text-align:center;border-top:3px solid;transition:all var(--tr);animation:fadeUp .4s ease both;}
+.mc:hover{transform:translateY(-2px);box-shadow:var(--sh2);}
+.mc-vl{font-size:22px;font-weight:800;color:var(--txt);margin-top:4px;letter-spacing:-.5px;font-family:'Sora',sans-serif;}
+.mc-lb{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:700;}
+
+/* ─── BAR CHART ─── */
+.bar-chart{display:flex;align-items:flex-end;gap:8px;height:128px;padding:4px 0 0;}
+.bcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bfill{width:100%;border-radius:6px 6px 0 0;min-height:4px;position:relative;transform-origin:bottom;animation:barGrow .6s cubic-bezier(.34,1.56,.64,1) both;}
+.bfill::after{content:attr(data-v);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:9.5px;font-weight:700;color:var(--txt);padding-bottom:2px;white-space:nowrap;font-family:'JetBrains Mono',monospace;}
+.blbl{font-size:9px;color:var(--muted);text-align:center;line-height:1.3;}
+
+/* ─── CHART BOXES ─── */
+.cw{position:relative;}
+.cw.h160{height:160px}.cw.h180{height:180px}.cw.h200{height:200px}.cw.h220{height:220px}
+
+/* ─── TOASTS ─── */
+.tw2{position:fixed;top:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none;}
+.toast{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:12px 15px;display:flex;gap:9px;align-items:flex-start;box-shadow:var(--sh3);min-width:270px;max-width:380px;animation:toastIn .3s cubic-bezier(.34,1.56,.64,1) both;pointer-events:all;}
+.toast.rm{animation:toastOut .2s ease both;}
+.toast.ok{border-left:3px solid var(--green);}
+.toast.err{border-left:3px solid var(--red);}
+.toast.warn{border-left:3px solid var(--yellow);}
+.t-ic{font-size:16px;flex-shrink:0;}
+.t-bd{flex:1;}
+.t-ti{font-weight:700;color:var(--txt);font-size:13px;}
+.t-su{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.t-x{background:none;border:none;cursor:pointer;color:var(--muted);font-size:17px;padding:0;}
+
+/* ─── LOADING / EMPTY ─── */
+.ld{text-align:center;padding:38px;color:var(--muted);}
+.sp{display:inline-block;width:20px;height:20px;border:2.5px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:7px;}
+.ld p{font-size:12px;color:var(--subtle);margin-top:3px;}
+.emp{text-align:center;padding:42px 18px;}
+.emp-ic{font-size:40px;margin-bottom:11px;opacity:.3;}
+.emp-ti{font-size:14px;font-weight:800;color:var(--txt);margin-bottom:5px;font-family:'Sora',sans-serif;}
+.emp-su{font-size:12px;color:var(--muted);margin-bottom:16px;}
+
+/* ─── ACTIVITY ─── */
+.ac{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);animation:fadeUp .3s ease both;}
+.ac:last-child{border-bottom:none;}
+.acd{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.act{font-size:12.5px;font-weight:600;color:var(--txt);}
+.acs{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* ─── GUIDE ─── */
+.gov{display:none;position:fixed;inset:0;z-index:2000;}
+.gov.open{display:block;}
+.gbg{position:absolute;inset:0;background:rgba(0,0,0,.75);}
+.gsp{position:absolute;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.75);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;}
+.gtp{position:absolute;background:var(--bg2);border:1px solid var(--border2);border-radius:13px;padding:17px 20px;max-width:315px;box-shadow:var(--sh3);z-index:2001;animation:scaleIn .2s ease;}
+.gtp::after{content:'';position:absolute;width:10px;height:10px;background:var(--bg2);border:1px solid var(--border2);transform:rotate(45deg);}
+.gtp.bot::after{top:-6px;left:22px;border-bottom:none;border-right:none;}
+.gtp.rgt::after{left:-6px;top:17px;border-right:none;border-top:none;transform:rotate(45deg) scaleX(-1);}
+.gsl{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;}
+.gti{font-size:14px;font-weight:800;color:var(--txt);margin-bottom:5px;font-family:'Sora',sans-serif;}
+.gde{font-size:12px;color:var(--muted);line-height:1.65;margin-bottom:13px;}
+.gac{display:flex;align-items:center;gap:8px;}
+.gdo{display:flex;gap:4px;flex:1;}
+.gd{width:6px;height:6px;border-radius:50%;background:var(--border2);transition:background var(--tr);}
+.gd.on{background:var(--blue);}
+.gsk{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:inherit;}
+.gsk:hover{color:var(--txt);}
+.gnx{padding:6px 14px;background:var(--blue-d);color:#fff;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+.gnx:hover{background:var(--blue);}
+.help-fab{position:fixed;bottom:22px;right:22px;z-index:500;width:44px;height:44px;border-radius:50%;background:var(--blue-d);color:#fff;border:none;cursor:pointer;font-size:19px;box-shadow:0 4px 18px rgba(31,111,235,.5);transition:all var(--tr);display:flex;align-items:center;justify-content:center;}
+.help-fab:hover{background:var(--blue);transform:scale(1.08);}
+
+/* ─── HOSTING GUIDE ─── */
+.hs{display:flex;gap:13px;padding:13px 0;border-bottom:1px solid var(--border);}
+.hs:last-child{border-bottom:none;}
+.hn{width:28px;height:28px;border-radius:50%;background:var(--blue-d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;margin-top:2px;}
+.ht{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px;}
+.hd{font-size:12px;color:var(--muted);line-height:1.6;}
+.code{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 13px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--green);margin-top:7px;overflow-x:auto;white-space:pre;}
+.setup-banner{background:linear-gradient(135deg,rgba(31,111,235,.2),rgba(88,166,255,.1));border:1px solid rgba(88,166,255,.25);border-radius:var(--r);padding:20px;margin-bottom:16px;display:flex;align-items:center;gap:14px;}
+.setup-ic{font-size:34px;flex-shrink:0;}
+.setup-ti{font-size:15px;font-weight:800;color:var(--txt);margin-bottom:3px;font-family:'Sora',sans-serif;}
+.setup-su{font-size:12px;color:var(--muted);}
+
+@media print{.sb,.topbar,.tw2,.help-fab,.gov,.mo{display:none!important;}.content{padding:0;}.view{display:block!important;}}
+@media(max-width:960px){
+  .sb{width:58px;}.sb-txt,.ni-lb,.np,.nav-g,.u-inf{display:none!important;}
+  .srow,.minis{grid-template-columns:1fr 1fr;}
+  .g2,.g3{grid-template-columns:1fr;}
+  .kr{grid-template-columns:1fr 1fr;}
+  .fr{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="tw2" id="toasts"></div>
+<!-- GUIDE -->
+<div class="gov" id="gOv"><div class="gbg" onclick="endG()"></div><div class="gsp" id="gSp"></div>
+  <div class="gtp bot" id="gTp"><div class="gsl" id="gL">Step 1 of 8</div><div class="gti" id="gT">Welcome!</div><div class="gde" id="gD"></div>
+    <div class="gac"><div class="gdo" id="gDo"></div><button class="gsk" onclick="endG()">Skip</button><button class="gnx" id="gN" onclick="nextG()">Next &#8594;</button></div>
+  </div>
+</div>
+<button class="help-fab" onclick="startG()">?</button>
+
+<div class="app">
+<!-- SIDEBAR -->
+<aside class="sb" id="sidebar">
+  <div class="sb-brand" onclick="toggleSB()">
+    <div class="sb-logo">&#127962;</div>
+    <div class="sb-txt"><div class="sb-n">ProcureFlow Pro</div><div class="sb-s">Raffles Consolidated</div></div>
+  </div>
+  <div class="nav-g">Main</div>
+  <div class="ni on" id="nav-dashboard" onclick="showV('dashboard',this)"><span class="ni-ic">&#128202;</span><span class="ni-lb">Dashboard</span></div>
+  <div class="nav-g">Procurement</div>
+  <div class="ni" id="nav-requests" onclick="showV('requests',this)"><span class="ni-ic">&#128203;</span><span class="ni-lb">Requests</span><span class="np" id="pill-req">0</span></div>
+  <div class="ni" id="nav-quotations" onclick="showV('quotations',this)"><span class="ni-ic">&#128172;</span><span class="ni-lb">Quotations</span></div>
+  <div class="ni" id="nav-purchase-orders" onclick="showV('purchase-orders',this)"><span class="ni-ic">&#128196;</span><span class="ni-lb">Purchase Orders</span><span class="np" id="pill-po">0</span></div>
+  <div class="ni" id="nav-approvals" onclick="showV('approvals',this)"><span class="ni-ic">&#9989;</span><span class="ni-lb">Approvals</span></div>
+  <div class="ni" id="nav-invoices" onclick="showV('invoices',this)"><span class="ni-ic">&#129534;</span><span class="ni-lb">Invoices</span><span class="np" id="pill-inv">0</span></div>
+  <div class="nav-g">Analytics</div>
+  <div class="ni" id="nav-reports" onclick="showV('reports',this)"><span class="ni-ic">&#128200;</span><span class="ni-lb">Reports</span></div>
+  <div class="nav-g">Setup</div>
+  <div class="ni" id="nav-settings" onclick="showV('settings',this)"><span class="ni-ic">&#9881;</span><span class="ni-lb">Settings</span></div>
+  <div class="ni" id="nav-hosting" onclick="showV('hosting',this)"><span class="ni-ic">&#127760;</span><span class="ni-lb">Free Hosting Guide</span></div>
+  <div class="sb-ft">
+    <div class="u-r"><div class="u-av">RC</div>
+      <div class="u-inf"><div class="u-nm">Administrator</div><div class="u-rl">Procurement Manager</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <button class="tb-tog" onclick="toggleSB()">&#9776;</button>
+    <div class="tb-ti" id="page-title">Dashboard</div>
+    <div class="tb-r">
+      <div class="conn-chip"><span class="cd ld" id="conn-dot"></span><span id="conn-txt">Connecting...</span></div>
+      <div class="srch"><input type="text" id="gsrch" placeholder="Search..." oninput="gSearch(this.value)"></div>
+      <button class="btn" onclick="refreshAll()"><span id="rfic">&#128260;</span> Refresh</button>
+      <button class="btn btn-pri" onclick="addRip(event);openM('new-request')" id="new-req-btn">+ New Request</button>
+    </div>
+  </div>
+  <div class="content">
+
+  <!-- DASHBOARD VIEW -->
+  <div class="view on" id="view-dashboard">
+    <div class="srow" id="stats-grid">
+      <div class="sc"><div class="sc-bar" style="background:linear-gradient(90deg,#1F6FEB,#58A6FF)"></div><div class="sc-glow" style="background:#58A6FF"></div>
+        <div class="sc-hd"><div class="sc-ic" style="background:var(--blue-bg)">&#128203;</div><span class="sc-tag" style="background:var(--blue-bg);color:var(--blue)" id="s-req-b">—</span></div>
+        <div class="sc-lb">Total Requests</div><div class="sc-vl" id="s-req">—</div><div class="sc-su" id="s-req-s">Loading...</div></div>
+      <div class="sc"><div class="sc-bar" style="background:linear-gradient(90deg,#1A7F37,#3FB950)"></div><div class="sc-glow" style="background:#3FB950"></div>
+        <div class="sc-hd"><div class="sc-ic" style="background:var(--green-bg)">&#128196;</div><span class="sc-tag" style="background:var(--green-bg);color:var(--green)" id="s-po-b">—</span></div>
+        <div class="sc-lb">Purchase Orders</div><div class="sc-vl" id="s-po">—</div><div class="sc-su" id="s-po-s">Loading...</div></div>
+      <div class="sc"><div class="sc-bar" style="background:linear-gradient(90deg,#9E6A03,#D29922)"></div><div class="sc-glow" style="background:#D29922"></div>
+        <div class="sc-hd"><div class="sc-ic" style="background:var(--yellow-bg)">&#128176;</div><span class="sc-tag" style="background:var(--yellow-bg);color:var(--yellow)" id="s-val-b">LKR</span></div>
+        <div class="sc-lb">Total PO Value</div><div class="sc-vl" id="s-val">—</div><div class="sc-su" id="s-val-s">Loading...</div></div>
+      <div class="sc"><div class="sc-bar" style="background:linear-gradient(90deg,#B91C1C,#F85149)"></div><div class="sc-glow" style="background:#F85149"></div>
+        <div class="sc-hd"><div class="sc-ic" style="background:var(--red-bg)">&#129534;</div><span class="sc-tag" style="background:var(--red-bg);color:var(--red)" id="s-inv-b">—</span></div>
+        <div class="sc-lb">Pending Invoices</div><div class="sc-vl" id="s-inv">—</div><div class="sc-su" id="s-inv-s">Loading...</div></div>
+    </div>
+    <div class="g3" style="margin-bottom:13px">
+      <div class="card" style="grid-column:span 2"><div class="ch"><div class="ct">&#128202; Request Pipeline</div><span id="ds-tot" style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace"></span></div>
+        <div class="cb"><div class="bar-chart" id="ds-bar"><div class="ld"><div class="sp"></div></div></div></div></div>
+      <div class="card"><div class="ch"><div class="ct">&#9201; Recent Activity</div></div><div class="cb" id="ds-act"><div class="ld"><div class="sp"></div><p>Loading...</p></div></div></div>
+    </div>
+    <div class="g3" style="margin-bottom:13px">
+      <div class="card"><div class="ch"><div class="ct">&#128200; Monthly PO Value</div></div><div class="cb"><div class="cw h160"><canvas id="ch-mo"></canvas></div></div></div>
+      <div class="card"><div class="ch"><div class="ct">&#129382; PO Status Split</div></div><div class="cb"><div class="cw h160"><canvas id="ch-pos"></canvas></div></div></div>
+      <div class="card"><div class="ch"><div class="ct">&#129534; Invoice Payment Health</div></div><div class="cb"><div class="cw h160"><canvas id="ch-inv"></canvas></div></div></div>
+    </div>
+    <div class="g3" style="margin-bottom:13px">
+      <div class="card"><div class="ch"><div class="ct">&#9889; Pending Actions</div><span id="ds-pend-n" style="font-size:11px;font-weight:700;color:var(--red)"></span></div><div class="cb" id="ds-pend"><div class="ld"><div class="sp"></div></div></div></div>
+      <div class="card"><div class="ch"><div class="ct">&#127970; Dept Spend</div></div><div class="cb" id="ds-dept"><div class="ld"><div class="sp"></div></div></div></div>
+      <div class="card"><div class="ch"><div class="ct">&#127942; Top Vendors</div></div><div class="cb" id="ds-vend"><div class="ld"><div class="sp"></div></div></div></div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ct">&#128276; Requests Requiring Action</div><button class="btn btn-sm" onclick="showV('requests',document.getElementById('nav-requests'))">View All</button></div>
+      <div class="tw"><table><thead><tr><th>ID</th><th>Item</th><th>By</th><th>Dept</th><th>Budget (LKR)</th><th>Priority</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody id="ds-tbl"><tr><td colspan="8"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- REQUESTS -->
+  <div class="view" id="view-requests">
+    <div class="card"><div class="ch"><div class="ct">&#128203; Procurement Requests</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select class="fc" style="width:155px;padding:7px 10px" onchange="fReqs(this.value)"><option value="">All Statuses</option><option>Draft</option><option>Submitted</option><option>Quotation Pending</option><option>PO Created</option><option>PO Approved</option><option>Closed</option></select>
+        <button class="btn btn-pri" onclick="addRip(event);openM('new-request')">+ New Request</button>
+      </div></div>
+      <div class="tw"><table><thead><tr><th>ID</th><th>Item</th><th>By</th><th>Dept</th><th>Qty</th><th>Budget (LKR)</th><th>Priority</th><th>Status</th><th>Required By</th><th>Actions</th></tr></thead>
+      <tbody id="req-tb"><tr><td colspan="10"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- QUOTATIONS -->
+  <div class="view" id="view-quotations">
+    <div class="card"><div class="ch"><div class="ct">&#128172; Quotations</div>
+      <button class="btn btn-pri" onclick="addRip(event);openM('add-quotation')">+ Add Quotation</button></div>
+      <div class="tw"><table><thead><tr><th>ID</th><th>Req ID</th><th>Vendor</th><th>Unit Price (LKR)</th><th>Qty</th><th>Total (LKR)</th><th>Delivery</th><th>Warranty</th><th>Valid Until</th><th>Document</th><th>Status</th></tr></thead>
+      <tbody id="qut-tb"><tr><td colspan="11"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- PURCHASE ORDERS -->
+  <div class="view" id="view-purchase-orders">
+    <div class="minis" id="po-minis"></div>
+    <div class="card"><div class="ch"><div class="ct">&#128196; Purchase Orders</div>
+      <select class="fc" style="width:155px;padding:7px 10px" onchange="fPOs(this.value)"><option value="">All Statuses</option><option>Pending Approval</option><option>Approved</option><option>Rejected</option><option>Sent to Vendor</option><option>Completed</option></select>
+    </div>
+    <div class="tw"><table><thead><tr><th>ID</th><th>PO Number</th><th>Vendor</th><th>Item</th><th>Total (LKR)</th><th>Delivery</th><th>PO Document</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody id="po-tb"><tr><td colspan="9"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- APPROVALS -->
+  <div class="view" id="view-approvals">
+    <div class="card"><div class="ch"><div class="ct">&#9989; PO Approval History</div>
+      <button class="btn btn-pri" onclick="addRip(event);openM('approve-po')">+ Record Approval</button></div>
+      <div class="tw"><table><thead><tr><th>ID</th><th>PO ID</th><th>Approver</th><th>Action</th><th>Date</th><th>Comments</th><th>Signed Document</th></tr></thead>
+      <tbody id="apr-tb"><tr><td colspan="7"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- INVOICES -->
+  <div class="view" id="view-invoices">
+    <div class="minis" id="inv-minis"></div>
+    <div class="card"><div class="ch"><div class="ct">&#129534; Invoices</div>
+      <div style="display:flex;gap:8px">
+        <select class="fc" style="width:140px;padding:7px 10px" onchange="fInvs(this.value)"><option value="">All</option><option>Pending</option><option>Paid</option><option>Overdue</option><option>Partial</option></select>
+        <button class="btn btn-pri" onclick="addRip(event);openM('add-invoice')">+ Add Invoice</button>
+      </div></div>
+      <div class="tw"><table><thead><tr><th>ID</th><th>Invoice #</th><th>PO ID</th><th>Vendor</th><th>Date</th><th>Due Date</th><th>Amount</th><th>Tax</th><th>Total (LKR)</th><th>Invoice Doc</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody id="inv-tb"><tr><td colspan="12"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- REPORTS -->
+  <div class="view" id="view-reports">
+    <div class="srow" style="margin-bottom:13px">
+      <div class="sc"><div class="sc-bar" style="background:linear-gradient(90deg,#1F6FEB,#58A6FF)"></div><div class="sc-lb">Total Requests</div><div class="sc-vl" id="r-treq">—</div></div>
+      <div class="sc"><div class="sc-bar" style="background:linear-gradient(90deg,#1A7F37,#3FB950)"></div><div class="sc-lb">Total PO Value</div><div class="sc-vl" id="r-tval">—</div></div>
+      <div class="sc"><div class="sc-bar" style="background:linear-gradient(90deg,#9E6A03,#D29922)"></div><div class="sc-lb">Invoices Paid</div><div class="sc-vl" id="r-paid">—</div></div>
+      <div class="sc"><div class="sc-bar" style="background:linear-gradient(90deg,#B91C1C,#F85149)"></div><div class="sc-lb">Outstanding Amt</div><div class="sc-vl" id="r-out">—</div></div>
+    </div>
+    <div class="g2" style="margin-bottom:13px">
+      <div class="card"><div class="ch"><div class="ct">&#128200; PO Value Trend (Monthly)</div></div><div class="cb"><div class="cw h220"><canvas id="r-trend"></canvas></div></div></div>
+      <div class="card"><div class="ch"><div class="ct">&#129382; Invoice Payment Breakdown</div></div><div class="cb"><div class="cw h220"><canvas id="r-donut"></canvas></div></div></div>
+    </div>
+    <div class="g3">
+      <div class="card"><div class="ch"><div class="ct">&#127970; Spend by Department</div></div><div class="cb" id="r-dept"><div class="ld"><div class="sp"></div></div></div></div>
+      <div class="card"><div class="ch"><div class="ct">&#127942; Top Vendors</div></div><div class="cb" id="r-vend"><div class="ld"><div class="sp"></div></div></div></div>
+      <div class="card"><div class="ch"><div class="ct">&#128202; Priority Breakdown</div></div><div class="cb"><div class="cw h200"><canvas id="r-pri"></canvas></div></div></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="view" id="view-settings">
+    <div class="setup-banner"><div class="setup-ic">&#128279;</div>
+      <div><div class="setup-ti">Cloudflare Worker API Configuration</div><div class="setup-su">No Azure needed! Enter your free Cloudflare Worker URL to connect to SharePoint</div></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="ch"><div class="ct">&#9729; API URL (Cloudflare Worker)</div></div>
+        <div class="cb">
+          <div class="fg"><label class="fl">Worker URL <span class="req">*</span></label><input class="fc" id="cfg-url" placeholder="https://procurement-api.YOUR-NAME.workers.dev"><div class="fhint">From Cloudflare Workers dashboard after deployment (100% free)</div></div>
+          <button class="btn btn-pri" onclick="addRip(event);saveURL()">Save &amp; Test Connection</button>
+          <div id="conn-res" style="margin-top:12px;font-size:12.5px;"></div>
+        </div>
+      </div>
+      <div class="card"><div class="ch"><div class="ct">&#127970; Company Info</div></div>
+        <div class="cb">
+          <div class="fg"><label class="fl">Company Name</label><input class="fc" value="Raffles Consolidated (Pvt) Ltd."></div>
+          <div class="fg"><label class="fl">Default Tax %</label><input class="fc" type="number" value="10" id="cfg-tax"></div>
+          <div class="fg"><label class="fl">Currency</label><select class="fc"><option>LKR</option><option>USD</option><option>EUR</option></select></div>
+          <button class="btn btn-pri" onclick="toast('Saved','Settings updated.','ok')">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FREE HOSTING GUIDE -->
+  <div class="view" id="view-hosting">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px">
+      <div class="card"><div class="ch"><div class="ct">&#127760; Step 1 &mdash; Cloudflare Worker (Free API)</div><span class="bdg bdg-approved">100% Free</span></div>
+        <div class="cb">
+          <div style="background:var(--blue-bg);border:1px solid rgba(88,166,255,.2);border-radius:9px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--muted)">
+            <strong style="color:var(--txt)">Why Cloudflare?</strong> Free forever, no credit card, handles auth with SharePoint via Microsoft Graph API. 100,000 free requests per day.
+          </div>
+          <div class="hs"><div class="hn">1</div><div><div class="ht">Sign up at cloudflare.com</div><div class="hd">Create a free account at <strong>cloudflare.com</strong> &mdash; no credit card needed. Click Workers &amp; Pages.</div></div></div>
+          <div class="hs"><div class="hn">2</div><div><div class="ht">Create a new Worker</div><div class="hd">Click Create Application &rarr; Create Worker &rarr; give it a name like <strong>procurement-api</strong> &rarr; Deploy.</div></div></div>
+          <div class="hs"><div class="hn">3</div><div><div class="ht">Paste the Worker code</div><div class="hd">Click Edit Code, paste the contents of <strong>cloudflare-worker.js</strong> (download below), click Save &amp; Deploy.</div></div></div>
+          <div class="hs"><div class="hn">4</div><div><div class="ht">Set environment variables</div><div class="hd">In Worker Settings &rarr; Variables, add:<br><br>
+            <div class="code">TENANT_ID     = (your Azure Tenant ID)
+CLIENT_ID     = (your Azure App Client ID)
+CLIENT_SECRET = (your Azure App Client Secret — never put real value in HTML!)
+SITE_ID       = (your SharePoint Site ID)</div>
+            <div style="margin-top:8px;padding:8px 11px;background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.25);border-radius:7px;font-size:11.5px;color:#F85149;">
+              &#128274; <strong>Security tip:</strong> Never write real credentials in this HTML file. Keep your Client Secret only in Cloudflare Worker environment variables — it is encrypted there and never exposed to users.
+            </div>
+          </div></div></div>
+          <div class="hs"><div class="hn">5</div><div><div class="ht">Copy your Worker URL</div><div class="hd">Your free URL will be:<br><strong>https://procurement-api.YOUR-NAME.workers.dev</strong><br>Paste it in Settings tab above.</div></div></div>
+        </div>
+      </div>
+
+      <div class="card"><div class="ch"><div class="ct">&#128196; Step 2 &mdash; Host Dashboard Free</div></div>
+        <div class="cb">
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+            <div style="background:var(--green-bg);border:1px solid rgba(63,185,80,.2);border-radius:9px;padding:12px;font-size:12px">
+              <strong style="color:var(--green)">&#127760; Option A: GitHub Pages</strong><div style="color:var(--muted);margin-top:4px">Upload index.html to GitHub repo, enable Pages in Settings. Free forever at <em>username.github.io/repo</em></div>
+            </div>
+            <div style="background:var(--purple-bg);border:1px solid rgba(188,140,255,.2);border-radius:9px;padding:12px;font-size:12px">
+              <strong style="color:var(--purple)">&#128196; Option B: SharePoint Page</strong><div style="color:var(--muted);margin-top:4px">Upload the HTML to your SharePoint Documents library. Share the direct link &mdash; works in any browser, no login needed if link is shared externally.</div>
+            </div>
+            <div style="background:var(--orange-bg);border:1px solid rgba(240,136,62,.2);border-radius:9px;padding:12px;font-size:12px">
+              <strong style="color:var(--orange)">&#9889; Option C: Cloudflare Pages</strong><div style="color:var(--muted);margin-top:4px">Upload to Cloudflare Pages (same dashboard). Free, fast CDN globally. Auto-deploys from GitHub.</div>
+            </div>
+          </div>
+          <div class="hs"><div class="hn">1</div><div><div class="ht">GitHub Pages (Easiest)</div>
+            <div class="hd">Create repo at github.com, upload <strong>index.html</strong>, go to Settings &rarr; Pages &rarr; Deploy from main branch.</div>
+            <div class="code">git init
+git add index.html
+git commit -m "Deploy dashboard"
+git push origin main</div>
+          </div></div>
+          <div class="hs"><div class="hn">2</div><div><div class="ht">SharePoint Hosting</div>
+            <div class="hd">Go to your SharePoint site &rarr; Documents &rarr; Upload <strong>04_dashboard_final.html</strong>. Right-click &rarr; Copy Link &rarr; Share with team.</div></div></div>
+          <div class="hs"><div class="hn">3</div><div><div class="ht">Enter Worker URL in Settings</div>
+            <div class="hd">Wherever the HTML is hosted, open it in browser &rarr; Settings tab &rarr; paste your Cloudflare Worker URL &rarr; Save &amp; Test. Done!</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card"><div class="ch"><div class="ct">&#128204; Complete Architecture (No Azure, No Cost)</div></div>
+      <div class="cb">
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:14px 0">
+          <div style="background:var(--blue-bg);border:1px solid rgba(88,166,255,.2);border-radius:9px;padding:14px 18px;text-align:center;min-width:130px">
+            <div style="font-size:22px;margin-bottom:5px">&#127760;</div>
+            <strong style="color:var(--blue)">GitHub Pages</strong>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:4px">Hosts HTML dashboard<br>FREE forever</div>
+          </div>
+          <div style="color:var(--blue);font-size:22px">&#8594;</div>
+          <div style="background:var(--orange-bg);border:1px solid rgba(240,136,62,.2);border-radius:9px;padding:14px 18px;text-align:center;min-width:130px">
+            <div style="font-size:22px;margin-bottom:5px">&#9889;</div>
+            <strong style="color:var(--orange)">Cloudflare Worker</strong>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:4px">Handles API &amp; auth<br>100k req/day FREE</div>
+          </div>
+          <div style="color:var(--blue);font-size:22px">&#8594;</div>
+          <div style="background:var(--purple-bg);border:1px solid rgba(188,140,255,.2);border-radius:9px;padding:14px 18px;text-align:center;min-width:130px">
+            <div style="font-size:22px;margin-bottom:5px">&#9729;</div>
+            <strong style="color:var(--purple)">Microsoft Graph</strong>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:4px">OAuth 2.0 auth<br>Included in M365</div>
+          </div>
+          <div style="color:var(--blue);font-size:22px">&#8594;</div>
+          <div style="background:var(--green-bg);border:1px solid rgba(63,185,80,.2);border-radius:9px;padding:14px 18px;text-align:center;min-width:130px">
+            <div style="font-size:22px;margin-bottom:5px">&#128196;</div>
+            <strong style="color:var(--green)">SharePoint</strong>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:4px">Data + File uploads<br>Already licensed</div>
+          </div>
+        </div>
+        <div style="background:var(--bg3);border-radius:9px;padding:12px;font-size:12px;color:var(--muted)">
+          <strong style="color:var(--txt)">Total cost: $0</strong> &mdash; GitHub Pages is free, Cloudflare Workers free tier is 100,000 requests/day (plenty for your team), Microsoft 365 you already pay for SharePoint. No Azure subscription needed.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+<!-- MODALS -->
+<!-- NEW REQUEST -->
+<div class="mo" id="modal-new-request">
+  <div class="modal"><div class="mh"><div class="mt">&#128203; New Procurement Request</div><button class="mx" onclick="closeM('new-request')">&#10005;</button></div>
+  <div class="mb">
+    <div class="fr"><div class="fg"><label class="fl">Item Title <span class="req">*</span></label><input class="fc" id="nr-ti" placeholder="e.g. Dell Laptop for IT"></div><div class="fg"><label class="fl">Priority <span class="req">*</span></label><select class="fc" id="nr-pr"><option>Low</option><option>Medium</option><option selected>High</option><option>Urgent</option></select></div></div>
+    <div class="fg"><label class="fl">Description / Specifications</label><textarea class="fc" id="nr-de" rows="2" placeholder="Model, specs, requirements..."></textarea></div>
+    <div class="fr"><div class="fg"><label class="fl">Requested By <span class="req">*</span></label><input class="fc" id="nr-by" placeholder="Full name"></div><div class="fg"><label class="fl">Department <span class="req">*</span></label><select class="fc" id="nr-dp"><option>IT</option><option>Finance</option><option>HR</option><option>Operations</option><option>Marketing</option><option>Admin</option></select></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Quantity <span class="req">*</span></label><input class="fc" id="nr-qt" type="number" min="1" value="1"></div><div class="fg"><label class="fl">Estimated Budget (LKR)</label><input class="fc" id="nr-bu" type="number" placeholder="0"></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Required By Date</label><input class="fc" id="nr-dt" type="date"></div><div class="fg"><label class="fl">Justification</label><input class="fc" id="nr-ju" placeholder="Business reason"></div></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeM('new-request')">Cancel</button><button class="btn btn-pri" onclick="addRip(event);subReq()">Submit Request</button></div>
+  </div>
+</div>
+
+<!-- ADD QUOTATION + file upload -->
+<div class="mo" id="modal-add-quotation">
+  <div class="modal"><div class="mh"><div class="mt">&#128172; Add Quotation + Upload Document</div><button class="mx" onclick="closeM('add-quotation')">&#10005;</button></div>
+  <div class="mb">
+    <div class="fg"><label class="fl">Request ID <span class="req">*</span></label><input class="fc" id="aq-ri" type="number" placeholder="Enter Request ID from Requests table"><div class="fhint">The # ID shown in the Requests table</div></div>
+    <div class="fr"><div class="fg"><label class="fl">Vendor Name <span class="req">*</span></label><input class="fc" id="aq-vn" placeholder="Company name"></div><div class="fg"><label class="fl">Vendor Email</label><input class="fc" id="aq-ve" type="email" placeholder="vendor@company.com"></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Unit Price (LKR) <span class="req">*</span></label><input class="fc" id="aq-up" type="number" placeholder="0" oninput="cQ()"></div><div class="fg"><label class="fl">Quantity <span class="req">*</span></label><input class="fc" id="aq-qt" type="number" value="1" oninput="cQ()"></div></div>
+    <div class="tot-box"><span>Calculated Total:</span><strong id="aq-tot">LKR 0</strong></div>
+    <div class="fr"><div class="fg"><label class="fl">Delivery (Days)</label><input class="fc" id="aq-dd" type="number" placeholder="7"></div><div class="fg"><label class="fl">Warranty Period</label><input class="fc" id="aq-wa" placeholder="e.g. 2 years"></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Valid Until</label><input class="fc" id="aq-vu" type="date"></div><div class="fg"><label class="fl">Specifications</label><input class="fc" id="aq-sp" placeholder="Technical details"></div></div>
+    <div class="fg">
+      <label class="fl">&#128206; Quotation Document (PDF / Excel) <span style="color:var(--blue);font-size:10px;text-transform:none;letter-spacing:0;font-weight:600">Recommended</span></label>
+      <div class="upz" id="aq-zone" onclick="document.getElementById('aq-fl').click()">
+        <input type="file" id="aq-fl" accept=".pdf,.xlsx,.xls,.docx" onchange="hFile(this,'aq-fn','aq-zone')">
+        <div class="uz-ic">&#128196;</div>
+        <div class="uz-ti">Click or drag &amp; drop Quotation PDF / Excel</div>
+        <div class="uz-su">PDF, XLSX, DOCX &mdash; saved to SharePoint PODocuments/Quotations/</div>
+        <div id="aq-fn"></div>
+      </div>
+    </div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeM('add-quotation')">Cancel</button><button class="btn btn-pri" onclick="addRip(event);subQut()">Save Quotation</button></div>
+  </div>
+</div>
+
+<!-- CREATE PO + Excel upload -->
+<div class="mo" id="modal-create-po">
+  <div class="modal"><div class="mh"><div class="mt">&#128196; Create PO + Upload PO Sheet</div><button class="mx" onclick="closeM('create-po')">&#10005;</button></div>
+  <div class="mb">
+    <div class="fr"><div class="fg"><label class="fl">Request ID <span class="req">*</span></label><input class="fc" id="cp-ri" type="number"></div><div class="fg"><label class="fl">Quotation ID <span class="req">*</span></label><input class="fc" id="cp-qi" type="number"></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Vendor Name <span class="req">*</span></label><input class="fc" id="cp-vn"></div><div class="fg"><label class="fl">Vendor Email</label><input class="fc" id="cp-ve"></div></div>
+    <div class="fg"><label class="fl">Item Description <span class="req">*</span></label><input class="fc" id="cp-it"></div>
+    <div class="fr"><div class="fg"><label class="fl">Quantity <span class="req">*</span></label><input class="fc" id="cp-qt" type="number" value="1" oninput="cPO()"></div><div class="fg"><label class="fl">Unit Price (LKR) <span class="req">*</span></label><input class="fc" id="cp-up" type="number" placeholder="0" oninput="cPO()"></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Tax %</label><input class="fc" id="cp-tx" type="number" value="10" oninput="cPO()"></div><div class="fg"><label class="fl">Expected Delivery Date</label><input class="fc" id="cp-de" type="date"></div></div>
+    <div class="tot-box">
+      <div><div style="font-size:11px;color:var(--blue)">Sub Total: <strong id="cp-sub" style="color:var(--txt)">LKR 0</strong></div><div style="font-size:11px;color:var(--blue);margin-top:2px">Tax: <strong id="cp-txamt" style="color:var(--txt)">LKR 0</strong></div></div>
+      <span style="margin:0 10px;color:var(--border2)">|</span><span>Grand Total:</span><strong id="cp-tot">LKR 0</strong>
+    </div>
+    <div class="fr"><div class="fg"><label class="fl">Delivery Address</label><input class="fc" id="cp-ad"></div><div class="fg"><label class="fl">Remarks</label><input class="fc" id="cp-re"></div></div>
+    <div class="fg">
+      <label class="fl">&#128202; PO Excel Sheet / PDF <span style="color:var(--blue);font-size:10px;text-transform:none;letter-spacing:0;font-weight:600">Upload signed PO sheet</span></label>
+      <div class="upz" id="cp-zone" onclick="document.getElementById('cp-fl').click()">
+        <input type="file" id="cp-fl" accept=".xlsx,.xls,.pdf,.docx" onchange="hFile(this,'cp-fn','cp-zone')">
+        <div class="uz-ic">&#128202;</div>
+        <div class="uz-ti">Upload signed PO Excel Sheet or PDF</div>
+        <div class="uz-su">XLSX, XLS, PDF &mdash; saved to SharePoint PODocuments/PurchaseOrders/</div>
+        <div id="cp-fn"></div>
+      </div>
+    </div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeM('create-po')">Cancel</button><button class="btn btn-pri" onclick="addRip(event);subPO()">Create Purchase Order</button></div>
+  </div>
+</div>
+
+<!-- APPROVE PO + signed doc upload -->
+<div class="mo" id="modal-approve-po">
+  <div class="modal" style="max-width:500px"><div class="mh"><div class="mt">&#9989; Record Approval + Upload Signed Doc</div><button class="mx" onclick="closeM('approve-po')">&#10005;</button></div>
+  <div class="mb">
+    <div class="fg"><label class="fl">PO Item ID <span class="req">*</span></label><input class="fc" id="ap-pi" type="number" placeholder="Enter PO ID from Purchase Orders table"></div>
+    <div class="fr"><div class="fg"><label class="fl">Approver Name <span class="req">*</span></label><input class="fc" id="ap-nm"></div><div class="fg"><label class="fl">Approver Email</label><input class="fc" id="ap-em" type="email"></div></div>
+    <div class="fg"><label class="fl">Decision <span class="req">*</span></label><select class="fc" id="ap-ac"><option>Approved</option><option>Rejected</option><option>Returned for Revision</option></select></div>
+    <div class="fg"><label class="fl">Comments</label><textarea class="fc" id="ap-co" rows="3" placeholder="Reason, conditions, notes..."></textarea></div>
+    <div class="fg">
+      <label class="fl">&#128221; Signed Approval Document <span style="color:var(--red);font-size:10px;text-transform:none;letter-spacing:0;font-weight:600">Required for full audit trail</span></label>
+      <div class="upz" id="ap-zone" onclick="document.getElementById('ap-fl').click()">
+        <input type="file" id="ap-fl" accept=".pdf,.xlsx,.xls,.docx" onchange="hFile(this,'ap-fn','ap-zone')">
+        <div class="uz-ic">&#128221;</div>
+        <div class="uz-ti">Upload signed approval document</div>
+        <div class="uz-su">PDF or Excel signed by approving manager &mdash; stored in SharePoint</div>
+        <div id="ap-fn"></div>
+      </div>
+    </div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeM('approve-po')">Cancel</button><button class="btn btn-grn" onclick="addRip(event);subApr()">&#9989; Submit Approval</button></div>
+  </div>
+</div>
+
+<!-- ADD INVOICE + PDF upload -->
+<div class="mo" id="modal-add-invoice">
+  <div class="modal"><div class="mh"><div class="mt">&#129534; Add Invoice + Upload PDF</div><button class="mx" onclick="closeM('add-invoice')">&#10005;</button></div>
+  <div class="mb">
+    <div class="fr"><div class="fg"><label class="fl">Invoice Number <span class="req">*</span></label><input class="fc" id="iv-nu" placeholder="INV-2025-XXXX"></div><div class="fg"><label class="fl">PO Item ID <span class="req">*</span></label><input class="fc" id="iv-pi" type="number"><div class="fhint">ID from Purchase Orders table</div></div></div>
+    <div class="fg"><label class="fl">Vendor Name</label><input class="fc" id="iv-vn"></div>
+    <div class="fr"><div class="fg"><label class="fl">Invoice Date</label><input class="fc" id="iv-dt" type="date"></div><div class="fg"><label class="fl">Due Date</label><input class="fc" id="iv-du" type="date"></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Invoice Amount (LKR) <span class="req">*</span></label><input class="fc" id="iv-am" type="number" oninput="cInv()"></div><div class="fg"><label class="fl">Tax Amount (LKR)</label><input class="fc" id="iv-tx" type="number" value="0" oninput="cInv()"></div></div>
+    <div class="tot-box"><span>Total Invoice Amount:</span><strong id="iv-tot">LKR 0</strong></div>
+    <div class="fg"><label class="fl">Notes</label><textarea class="fc" id="iv-nt" rows="2"></textarea></div>
+    <div class="fg">
+      <label class="fl">&#129534; Vendor Invoice PDF <span style="color:var(--blue);font-size:10px;text-transform:none;letter-spacing:0;font-weight:600">Attach original invoice</span></label>
+      <div class="upz" id="iv-zone" onclick="document.getElementById('iv-fl').click()">
+        <input type="file" id="iv-fl" accept=".pdf,.xlsx,.xls" onchange="hFile(this,'iv-fn','iv-zone')">
+        <div class="uz-ic">&#129534;</div>
+        <div class="uz-ti">Upload vendor Invoice PDF</div>
+        <div class="uz-su">PDF or Excel &mdash; official vendor invoice &mdash; stored in SharePoint</div>
+        <div id="iv-fn"></div>
+      </div>
+    </div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeM('add-invoice')">Cancel</button><button class="btn btn-pri" onclick="addRip(event);subInv()">Save Invoice</button></div>
+  </div>
+</div>
+
+<!-- PO FULL DETAIL -->
+<div class="mo" id="modal-po-detail">
+  <div class="modal" style="width:820px"><div class="mh">
+    <div class="mt" id="po-dtitle">Purchase Order Details</div>
+    <div style="display:flex;gap:7px"><button class="btn btn-sm" onclick="window.print()">&#128424; Print</button><button class="mx" onclick="closeM('po-detail')">&#10005;</button></div>
+  </div>
+  <div class="mb" id="po-dbody"><div class="ld"><div class="sp"></div><p>Loading full details...</p></div></div>
+  <div class="mf"><button class="btn" onclick="closeM('po-detail')">Close</button><button class="btn btn-pri" onclick="closeM('po-detail');openM('add-invoice')">+ Add Invoice</button></div>
+  </div>
+</div>
+<script>
+// ═══════════════════════════════════════════════════
+// CONFIGURATION — enter your Cloudflare Worker URL
+// in the Settings tab after deployment
+// ═══════════════════════════════════════════════════
+let API = localStorage.getItem('pf_api_url') || '';
+const LISTS = {
+  Requests:   '6e83b607-300e-4a91-b5f4-81addf2419b2',
+  Quotations: '264642ba-bcf9-48da-b24d-71606ff15b4c',
+  POs:        '8f27b25a-d635-4d1a-8bca-a6411745529a',
+  Approvals:  '8364acc6-8bd4-4792-b8b9-05021af0e852',
+  Invoices:   'ca980ea2-bdb0-4ba2-98e5-915f66a140cf'
+};
+const DOC_LIB = 'PODocuments';
+
+// ── Connection status ──
+function setConn(s, t) {
+  document.getElementById('conn-dot').className = 'cd ' + s;
+  document.getElementById('conn-txt').textContent = t;
+}
+
+// ── API calls ──
+async function api(path, method='GET', body=null) {
+  if (!API) throw new Error('Cloudflare Worker URL not set — go to Settings tab');
+  const url = `${API.replace(/\/$/,'')}/api/${path}`;
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
+  return d;
+}
+async function gGet(listId, filter) {
+  const p = `list/${listId}` + (filter ? `?filter=${encodeURIComponent(filter)}` : '');
+  const d = await api(p);
+  return (d.value||[]).map(i => ({_id:i.id, ...i.fields}));
+}
+async function gGetOne(listId, id) { return api(`item/${listId}/${id}`); }
+async function gPost(listId, fields) { const d = await api(`list/${listId}`,'POST',{fields}); return d.id; }
+async function gPatch(listId, id, flds) { return api(`item/${listId}/${id}`,'PATCH',flds); }
+
+// ── File upload ──
+async function uploadFile(file, folder) {
+  if (!file || !API) return null;
+  try {
+    const reader = new FileReader();
+    const b64 = await new Promise(res => {
+      reader.onload = e => res(e.target.result.split(',')[1]);
+      reader.readAsDataURL(file);
+    });
+    const d = await api('upload', 'POST', {
+      fileName: file.name,
+      base64Content: b64,
+      folderPath: folder || DOC_LIB,
+      contentType: file.type
+    });
+    return d.webUrl || d.url || file.name;
+  } catch(e) {
+    console.warn('Upload skipped:', e.message);
+    return `[uploaded:${file.name}]`;
+  }
+}
+
+// ── Settings ──
+function saveURL() {
+  const u = document.getElementById('cfg-url').value.trim();
+  if (!u) { toast('Missing URL','Enter your Cloudflare Worker URL','warn'); return; }
+  API = u;
+  localStorage.setItem('pf_api_url', u);
+  testConn();
+}
+async function testConn() {
+  setConn('ld','Connecting...');
+  document.getElementById('conn-res').innerHTML = '<span style="color:var(--yellow)">&#8987; Testing...</span>';
+  try {
+    await gGet(LISTS.Requests);
+    setConn('ok','Connected ✓');
+    document.getElementById('conn-res').innerHTML = '<span style="color:var(--green)">&#9989; Connected to SharePoint successfully!</span>';
+    toast('Connected!','SharePoint data loaded successfully.','ok');
+    loadDash();
+  } catch(e) {
+    setConn('err','Failed');
+    document.getElementById('conn-res').innerHTML = `<span style="color:var(--red)">&#10060; ${e.message}</span>`;
+    toast('Connection Failed', e.message, 'err');
+  }
+}
+
+// ── File select handler ──
+function hFile(input, nameId, zoneId) {
+  const file = input.files[0];
+  if (!file) return;
+  const nameEl = document.getElementById(nameId);
+  if (nameEl) nameEl.innerHTML = `<div class="uz-file">&#128206; ${file.name}</div>`;
+  const zone = document.getElementById(zoneId);
+  if (zone) zone.classList.add('done');
+}
+
+// ── Helpers ──
+const BM = {
+  'Draft':'bdg-draft','Submitted':'bdg-submitted','Quotation Pending':'bdg-pending',
+  'PO Created':'bdg-purple','PO Approved':'bdg-approved','Approved':'bdg-approved',
+  'Rejected':'bdg-rejected','Pending Approval':'bdg-pending','Sent to Vendor':'bdg-submitted',
+  'Completed':'bdg-completed','Closed':'bdg-draft','Pending':'bdg-pending',
+  'Paid':'bdg-approved','Overdue':'bdg-overdue','Partial':'bdg-pending',
+  'Selected':'bdg-selected','Received':'bdg-submitted',
+  'Low':'bdg-draft','Medium':'bdg-submitted','High':'bdg-pending','Urgent':'bdg-rejected'
+};
+const PULSE = new Set(['Pending Approval','Quotation Pending','Overdue','Urgent','Pending']);
+function bdg(v) {
+  if(!v) return '—';
+  const c = BM[v] || 'bdg-draft';
+  const d = PULSE.has(v) ? '<span class="bdot"></span>' : '';
+  return `<span class="bdg ${c}">${d}${v}</span>`;
+}
+function fmt(n) { return n!=null&&n!=='' ? Number(n).toLocaleString('en-US') : '—'; }
+function fD(d)  { return d ? new Date(d).toLocaleDateString('en-GB') : '—'; }
+function fK(n)  { if(!n) return '0'; const v=Number(n); return v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':String(v); }
+function emp(ic,ti,su) { return `<div class="emp"><div class="emp-ic">${ic}</div><div class="emp-ti">${ti}</div><div class="emp-su">${su}</div></div>`; }
+function flink(url, lbl) {
+  if (!url) return '—';
+  if (url.startsWith('[uploaded:')) return `<span style="color:var(--green);font-size:11px">&#128206; ${url.slice(10,-1)}</span>`;
+  return `<a href="${url}" target="_blank" class="flink">&#128206; ${lbl||'View'}</a>`;
+}
+
+// ── Toast ──
+function toast(title, sub, type='ok') {
+  const d = document.createElement('div');
+  d.className = `toast ${type}`;
+  const ic = {ok:'&#9989;',err:'&#10060;',warn:'&#9888;'};
+  d.innerHTML = `<span class="t-ic">${ic[type]||'&#8505;'}</span><div class="t-bd"><div class="t-ti">${title}</div><div class="t-su">${sub}</div></div><button class="t-x" onclick="this.parentElement.remove()">&#10005;</button>`;
+  document.getElementById('toasts').appendChild(d);
+  setTimeout(() => { d.classList.add('rm'); setTimeout(() => d.remove(), 220); }, 4800);
+}
+
+// ── Ripple ──
+function addRip(e) {
+  const b = e.currentTarget;
+  const rect = b.getBoundingClientRect();
+  const r = document.createElement('span');
+  r.className = 'rpl';
+  const s = Math.max(rect.width, rect.height);
+  r.style.cssText = `width:${s}px;height:${s}px;left:${e.clientX-rect.left-s/2}px;top:${e.clientY-rect.top-s/2}px;`;
+  b.appendChild(r);
+  setTimeout(() => r.remove(), 550);
+}
+
+// ── Charts ──
+let charts = {};
+function dC(id) { if(charts[id]) { charts[id].destroy(); delete charts[id]; } }
+const FONT = "'Plus Jakarta Sans',system-ui,sans-serif";
+const GRID = 'rgba(255,255,255,.05)';
+Chart.defaults.color = '#8B949E';
+Chart.defaults.font.family = FONT;
+
+function mkLine(id, labels, data, color='#58A6FF') {
+  dC(id); const c = document.getElementById(id); if(!c) return;
+  charts[id] = new Chart(c, {
+    type: 'line',
+    data: { labels, datasets: [{ data, borderColor:color, backgroundColor:color+'14', fill:true, tension:.44, pointRadius:4, pointBackgroundColor:color, pointHoverRadius:7, borderWidth:2 }] },
+    options: { responsive:true, maintainAspectRatio:false, animation:{duration:700},
+      plugins: { legend:{display:false} },
+      scales: {
+        y: { beginAtZero:true, grid:{color:GRID}, ticks:{font:{size:10}, callback:v=>'LKR '+fK(v)} },
+        x: { grid:{display:false}, ticks:{font:{size:10}} }
+      }
+    }
+  });
+}
+function mkDonut(id, labels, data, colors) {
+  dC(id); const c = document.getElementById(id); if(!c) return;
+  charts[id] = new Chart(c, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor:colors, borderWidth:3, borderColor:'#161B22', hoverBorderWidth:4 }] },
+    options: { responsive:true, maintainAspectRatio:false, animation:{duration:700},
+      plugins: { legend: { position:'right', labels:{font:{size:11}, boxWidth:11, padding:10} } }
+    }
+  });
+}
+function mkBar(id, labels, data, colors) {
+  dC(id); const c = document.getElementById(id); if(!c) return;
+  charts[id] = new Chart(c, {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor:colors||'#58A6FF', borderRadius:6, borderSkipped:false }] },
+    options: { responsive:true, maintainAspectRatio:false, animation:{duration:700},
+      plugins: { legend:{display:false} },
+      scales: {
+        y: { beginAtZero:true, grid:{color:GRID}, ticks:{font:{size:10}} },
+        x: { grid:{display:false}, ticks:{font:{size:10}} }
+      }
+    }
+  });
+}
+
+// ── Sidebar & Nav ──
+function toggleSB() { document.getElementById('sidebar').classList.toggle('col'); }
+
+function showV(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
+  const v = document.getElementById('view-'+id); if(v) v.classList.add('on');
+  if (btn) btn.classList.add('on');
+  else { const nb = document.getElementById('nav-'+id); if(nb) nb.classList.add('on'); }
+  const TITLES = {dashboard:'Dashboard',requests:'Procurement Requests',quotations:'Quotations','purchase-orders':'Purchase Orders',approvals:'PO Approvals',invoices:'Invoices',reports:'Reports & Analytics',settings:'Settings',hosting:'Free Hosting Guide'};
+  document.getElementById('page-title').textContent = TITLES[id] || id;
+  if (id==='requests')        loadReqs();
+  if (id==='quotations')      loadQuts();
+  if (id==='purchase-orders') loadPOs();
+  if (id==='approvals')       loadAprs();
+  if (id==='invoices')        loadInvs();
+  if (id==='reports')         loadRpts();
+  if (id==='settings') { const s=localStorage.getItem('pf_api_url'); if(s) document.getElementById('cfg-url').value=s; }
+}
+
+// ── Modals ──
+function openM(n)  { document.getElementById('modal-'+n).classList.add('open'); }
+function closeM(n) { document.getElementById('modal-'+n).classList.remove('open'); }
+document.querySelectorAll('.mo').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); }));
+document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.mo.open').forEach(o=>o.classList.remove('open')); });
+
+// ── Drag and drop on upload zones ──
+document.querySelectorAll('.upz').forEach(zone => {
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag');
+    const file = e.dataTransfer.files[0]; if(!file) return;
+    const input = zone.querySelector('input[type=file]');
+    const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
+    const nameEl = zone.querySelector('[id$="-fn"]');
+    if (nameEl) nameEl.innerHTML = `<div class="uz-file">&#128206; ${file.name}</div>`;
+    zone.classList.add('done');
+  });
+});
+
+// ── Animate number ──
+function animN(id, target, prefix='', suffix='') {
+  const el = document.getElementById(id); if(!el) return;
+  let cur = 0; const step = target / 40;
+  const t = setInterval(() => {
+    cur = Math.min(cur+step, target);
+    el.textContent = prefix + Math.round(cur).toLocaleString() + suffix;
+    if(cur>=target) clearInterval(t);
+  }, 16);
+}
+
+// ═══════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════
+async function loadDash() {
+  if (!API) {
+    setConn('err','URL not set');
+    ['ds-act','ds-dept','ds-pend','ds-vend'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.innerHTML = `<div class="emp"><div class="emp-ic">&#9881;</div><div class="emp-ti">Setup Required</div><div class="emp-su">Go to Settings tab and enter your Cloudflare Worker URL</div><button class="btn btn-pri" onclick="showV('settings',document.getElementById('nav-settings'))" style="margin:0 auto">Open Settings</button></div>`;
+    });
+    document.getElementById('ds-tbl').innerHTML = `<tr><td colspan="8">${emp('&#9881;','Not Connected','Configure your Worker URL in Settings')}</td></tr>`;
+    document.getElementById('ds-bar').innerHTML = `<div class="emp"><div class="emp-ic">&#128279;</div></div>`;
+    return;
+  }
+  setConn('ld','Loading...');
+  try {
+    const [reqs,pos,invs,quots] = await Promise.all([
+      gGet(LISTS.Requests), gGet(LISTS.POs), gGet(LISTS.Invoices), gGet(LISTS.Quotations)
+    ]);
+    setConn('ok','Connected ✓');
+
+    // Badges
+    const pR = reqs.filter(r=>r.RequestStatus==='Submitted'||r.RequestStatus==='Quotation Pending').length;
+    const pP = pos.filter(p=>p.POStatus==='Pending Approval').length;
+    const oI = invs.filter(i=>i.PaymentStatus==='Overdue').length;
+    document.getElementById('pill-req').textContent = pR;
+    document.getElementById('pill-po').textContent  = pP;
+    document.getElementById('pill-inv').textContent = oI;
+
+    // Stat cards
+    animN('s-req', reqs.length);
+    document.getElementById('s-req-b').textContent = pR+' pending';
+    document.getElementById('s-req-s').textContent = pR+' need action';
+
+    animN('s-po', pos.length);
+    const appr = pos.filter(p=>p.POStatus==='Approved').length;
+    document.getElementById('s-po-b').textContent = appr+' approved';
+    document.getElementById('s-po-s').textContent = appr+' approved, '+pP+' pending';
+
+    const totVal = pos.reduce((s,p)=>s+(p.TotalAmount||0),0);
+    document.getElementById('s-val').textContent   = 'LKR '+fK(totVal);
+    document.getElementById('s-val-b').textContent = pos.length+' POs';
+    document.getElementById('s-val-s').textContent = 'Across '+pos.length+' purchase orders';
+
+    const pInv = invs.filter(i=>i.PaymentStatus==='Pending'||i.PaymentStatus==='Overdue').reduce((s,i)=>s+(i.TotalAmount||0),0);
+    document.getElementById('s-inv').textContent   = 'LKR '+fK(pInv);
+    document.getElementById('s-inv-b').textContent = oI+' overdue';
+    document.getElementById('s-inv-s').textContent = oI+' overdue invoices';
+
+    // Pipeline bar chart
+    const sL = ['Draft','Submitted','Quot Pend','PO Created','Approved','Closed'];
+    const sC = ['#484F58','#58A6FF','#D29922','#BC8CFF','#3FB950','#6E7681'];
+    const sM = {'Draft':0,'Submitted':1,'Quotation Pending':2,'PO Created':3,'PO Approved':4,'Closed':5};
+    const sc = [0,0,0,0,0,0];
+    reqs.forEach(r => { const i=sM[r.RequestStatus]; if(i!=null) sc[i]++; });
+    const mx = Math.max(...sc, 1);
+    document.getElementById('ds-tot').textContent = reqs.length+' total requests';
+    document.getElementById('ds-bar').innerHTML = sL.map((l,i) => `
+      <div class="bcol">
+        <div class="bfill" style="height:${Math.max(sc[i]/mx*120,sc[i]>0?8:3)}px;background:${sC[i]};animation-delay:${i*.08}s" data-v="${sc[i]||''}"></div>
+        <div class="blbl">${l}</div>
+      </div>`).join('');
+
+    // Monthly PO chart
+    const mM = {};
+    pos.forEach(p => { if(p.Created) { const m=new Date(p.Created).toLocaleDateString('en-GB',{month:'short',year:'2-digit'}); mM[m]=(mM[m]||0)+(p.TotalAmount||0); }});
+    const mK = Object.keys(mM).slice(-7);
+    mkLine('ch-mo', mK.length?mK:['No data'], mK.map(k=>mM[k]));
+
+    // PO status donut
+    const psL=['Pending Approval','Approved','Rejected','Sent to Vendor','Completed'];
+    const psC=['#D29922','#3FB950','#F85149','#58A6FF','#39D353'];
+    const psD=psL.map(s=>pos.filter(p=>p.POStatus===s).length);
+    const nL1=[],nD1=[],nC1=[];
+    psL.forEach((s,i)=>{if(psD[i]>0){nL1.push(s);nD1.push(psD[i]);nC1.push(psC[i]);}});
+    mkDonut('ch-pos',nL1.length?nL1:['No data'],nD1.length?nD1:[1],nC1.length?nC1:['#21262D']);
+
+    // Invoice payment donut
+    const ipL=['Pending','Paid','Overdue','Partial'];
+    const ipC=['#D29922','#3FB950','#F85149','#58A6FF'];
+    const ipD=ipL.map(s=>invs.filter(i=>i.PaymentStatus===s).length);
+    const nL2=[],nD2=[],nC2=[];
+    ipL.forEach((s,i)=>{if(ipD[i]>0){nL2.push(s);nD2.push(ipD[i]);nC2.push(ipC[i]);}});
+    mkDonut('ch-inv',nL2.length?nL2:['No data'],nD2.length?nD2:[1],nC2.length?nC2:['#21262D']);
+
+    // Dept spend
+    const dM = {};
+    reqs.forEach(r=>{if(r.Department&&r.EstimatedBudget) dM[r.Department]=(dM[r.Department]||0)+(r.EstimatedBudget||0);});
+    const deps = Object.entries(dM).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    const mxD = Math.max(...deps.map(d=>d[1]), 1);
+    const dC2 = ['#58A6FF','#3FB950','#D29922','#BC8CFF','#F85149','#F0883E'];
+    document.getElementById('ds-dept').innerHTML = deps.length===0
+      ? emp('&#127970;','No dept data','Add requests with dept info')
+      : deps.map(([d,v],i)=>`
+          <div style="margin-bottom:11px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+              <span style="font-weight:700">${d}</span>
+              <strong style="font-family:'JetBrains Mono',monospace;font-size:11.5px">LKR ${fmt(v)}</strong>
+            </div>
+            <div class="prog"><div class="pf" style="width:${Math.round(v/mxD*100)}%;background:${dC2[i]}"></div></div>
+          </div>`).join('');
+
+    // Pending actions
+    const pI = [
+      ...reqs.filter(r=>r.RequestStatus==='Submitted').map(r=>({label:`Request #${r._id}: ${r.Title}`,sub:'Needs vendor quotations',color:'#58A6FF',action:'Add Quote',fn:`openM('add-quotation');document.getElementById('aq-ri').value='${r._id}'`})),
+      ...pos.filter(p=>p.POStatus==='Pending Approval').map(p=>({label:`${p.PONumber||'PO #'+p._id} — LKR ${fmt(p.TotalAmount)}`,sub:'Awaiting manager approval',color:'#D29922',action:'Approve',fn:`openM('approve-po');document.getElementById('ap-pi').value='${p._id}'`})),
+      ...invs.filter(i=>i.PaymentStatus==='Overdue').map(i=>({label:`${i.InvoiceNumber}: LKR ${fmt(i.TotalAmount)}`,sub:'Payment is overdue',color:'#F85149',action:'View',fn:`openPOD('${i.POItemId||""}')`}))
+    ].slice(0,8);
+    document.getElementById('ds-pend-n').textContent = pI.length ? pI.length+' items' : '';
+    document.getElementById('ds-pend').innerHTML = pI.length===0
+      ? emp('&#9989;','All caught up!','No pending actions')
+      : pI.map((p,i)=>`
+          <div class="ac" style="animation-delay:${i*.06}s">
+            <div class="acd" style="background:${p.color}"></div>
+            <div style="flex:1"><div class="act">${p.label}</div><div class="acs">${p.sub}</div></div>
+            <button class="btn btn-sm" onclick="${p.fn}">${p.action}</button>
+          </div>`).join('');
+
+    // Top vendors
+    const vM = {};
+    quots.forEach(q=>{if(q.VendorName) vM[q.VendorName]=(vM[q.VendorName]||0)+(q.TotalAmount||0);});
+    const vends = Object.entries(vM).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    document.getElementById('ds-vend').innerHTML = vends.length===0
+      ? emp('&#127942;','No vendor data','Add quotations to see rankings')
+      : `<table style="width:100%"><thead><tr><th>#</th><th>Vendor</th><th>Total (LKR)</th><th>Quotes</th></tr></thead><tbody>`
+        +vends.map(([v,val],i)=>`<tr class="ri" style="animation-delay:${i*.05}s">
+            <td style="font-size:16px">${['&#127945;','&#127946;','&#129352;','4','5'][i]}</td>
+            <td><strong>${v}</strong></td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(val)}</td>
+            <td style="text-align:center">${quots.filter(q=>q.VendorName===v).length}</td>
+          </tr>`).join('')+'</tbody></table>';
+
+    // Recent activity
+    const all = [
+      ...pos.map(p=>({ts:new Date(p.Created||0),label:`${p.PONumber||'PO'} — ${p.VendorName||''}`,sub:`LKR ${fmt(p.TotalAmount)}`,color:p.POStatus==='Approved'?'#3FB950':'#58A6FF'})),
+      ...quots.map(q=>({ts:new Date(q.Created||0),label:`Quote from ${q.VendorName||''}`,sub:`LKR ${fmt(q.TotalAmount)} · Req #${q.RequestItemId}`,color:'#BC8CFF'})),
+      ...invs.map(i=>({ts:new Date(i.Created||0),label:`${i.InvoiceNumber||'Invoice'} received`,sub:`LKR ${fmt(i.TotalAmount)} · ${i.VendorName||''}`,color:i.PaymentStatus==='Overdue'?'#F85149':'#D29922'}))
+    ].sort((a,b)=>b.ts-a.ts).slice(0,7);
+    document.getElementById('ds-act').innerHTML = all.length===0
+      ? emp('&#128240;','No activity yet','Data appears as you use the system')
+      : all.map((a,i)=>`
+          <div class="ac" style="animation-delay:${i*.06}s">
+            <div class="acd" style="background:${a.color}"></div>
+            <div><div class="act">${a.label}</div><div class="acs">${a.sub} · ${a.ts.toLocaleDateString('en-GB')}</div></div>
+          </div>`).join('');
+
+    // Action table
+    const ai = reqs.filter(r=>r.RequestStatus==='Submitted'||r.RequestStatus==='Quotation Pending').slice(0,6);
+    document.getElementById('ds-tbl').innerHTML = ai.length===0
+      ? `<tr><td colspan="8">${emp('&#9989;','No actions needed','All requests progressing normally')}</td></tr>`
+      : ai.map((r,i)=>`<tr class="ri" style="animation-delay:${i*.05}s">
+          <td style="color:var(--blue);font-weight:700;font-family:'JetBrains Mono',monospace">#${r._id}</td>
+          <td><strong>${r.Title||'—'}</strong><br><span style="color:var(--muted);font-size:11px">${r.ItemDescription||''}</span></td>
+          <td>${r.RequestedBy||'—'}</td><td>${r.Department||'—'}</td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(r.EstimatedBudget)}</td>
+          <td>${bdg(r.Priority)}</td><td>${bdg(r.RequestStatus)}</td>
+          <td style="white-space:nowrap">
+            <button class="btn btn-sm" onclick="openPOD('${r._id}')">View</button>
+            <button class="btn btn-sm btn-pri" style="margin-left:3px" onclick="openM('add-quotation');document.getElementById('aq-ri').value='${r._id}'">+Quote</button>
+          </td>
+        </tr>`).join('');
+
+  } catch(e) {
+    setConn('err','Error');
+    toast('Dashboard Error', e.message, 'err');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// TABLE LOADERS
+// ═══════════════════════════════════════════════════
+let _reqs=[], _pos=[], _invs=[];
+
+async function loadReqs() {
+  const tb = document.getElementById('req-tb');
+  tb.innerHTML = `<tr><td colspan="10"><div class="ld"><div class="sp"></div><p>Loading...</p></div></td></tr>`;
+  try {
+    _reqs = await gGet(LISTS.Requests);
+    renderReqs(_reqs);
+  } catch(e) { tb.innerHTML=`<tr><td colspan="10" style="color:var(--red);padding:14px">&#10060; ${e.message}</td></tr>`; }
+}
+function renderReqs(items) {
+  const tb = document.getElementById('req-tb');
+  tb.innerHTML = items.length===0
+    ? `<tr><td colspan="10">${emp('&#128203;','No requests','Click + New Request to get started')}</td></tr>`
+    : items.map((r,i)=>`<tr class="ri" style="animation-delay:${i*.04}s">
+        <td style="color:var(--blue);font-weight:700;font-family:'JetBrains Mono',monospace">#${r._id}</td>
+        <td><strong>${r.Title||'—'}</strong><br><span style="color:var(--muted);font-size:11px">${r.ItemDescription||''}</span></td>
+        <td>${r.RequestedBy||'—'}</td><td>${r.Department||'—'}</td>
+        <td style="text-align:center;font-weight:700">${r.QuantityRequired||'—'}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(r.EstimatedBudget)}</td>
+        <td>${bdg(r.Priority)}</td><td>${bdg(r.RequestStatus)}</td>
+        <td style="font-size:12px">${fD(r.RequiredByDate)}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-sm" onclick="openPOD('${r._id}')">View</button>
+          <button class="btn btn-sm btn-pri" style="margin-left:3px" onclick="openM('add-quotation');document.getElementById('aq-ri').value='${r._id}'">+Quote</button>
+          <button class="btn btn-sm" style="margin-left:3px" onclick="openM('create-po');document.getElementById('cp-ri').value='${r._id}'">+PO</button>
+        </td>
+      </tr>`).join('');
+}
+function fReqs(s) { renderReqs(s?_reqs.filter(r=>r.RequestStatus===s):_reqs); }
+
+async function loadQuts() {
+  const tb = document.getElementById('qut-tb');
+  tb.innerHTML = `<tr><td colspan="11"><div class="ld"><div class="sp"></div><p>Loading...</p></div></td></tr>`;
+  try {
+    const items = await gGet(LISTS.Quotations);
+    tb.innerHTML = items.length===0
+      ? `<tr><td colspan="11">${emp('&#128172;','No quotations','Add vendor quotations for requests')}</td></tr>`
+      : items.map((q,i)=>`<tr class="ri" style="animation-delay:${i*.04}s">
+          <td style="color:var(--blue);font-weight:700;font-family:'JetBrains Mono',monospace">#${q._id}</td>
+          <td><span class="bdg bdg-submitted">#${q.RequestItemId||'—'}</span></td>
+          <td><strong>${q.VendorName||'—'}</strong></td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(q.UnitPrice)}</td>
+          <td style="text-align:center">${q.Quantity||'—'}</td>
+          <td style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px">LKR ${fmt(q.TotalAmount)}</td>
+          <td>${q.DeliveryDays?q.DeliveryDays+' days':'—'}</td>
+          <td>${q.WarrantyPeriod||'—'}</td>
+          <td style="font-size:12px">${fD(q.ValidUntil)}</td>
+          <td>${flink(q.DocumentUrl||q.QuotationDoc,'View PDF')}</td>
+          <td>${bdg(q.QuotationStatus)}</td>
+        </tr>`).join('');
+  } catch(e) { tb.innerHTML=`<tr><td colspan="11" style="color:var(--red);padding:14px">&#10060; ${e.message}</td></tr>`; }
+}
+
+async function loadPOs() {
+  const tb = document.getElementById('po-tb');
+  tb.innerHTML = `<tr><td colspan="9"><div class="ld"><div class="sp"></div><p>Loading...</p></div></td></tr>`;
+  try {
+    _pos = await gGet(LISTS.POs);
+    const ap=_pos.filter(p=>p.POStatus==='Approved').length;
+    const pp=_pos.filter(p=>p.POStatus==='Pending Approval').length;
+    const tv=_pos.reduce((s,p)=>s+(p.TotalAmount||0),0);
+    const mc_colors = ['#58A6FF','#3FB950','#D29922','#BC8CFF'];
+    document.getElementById('po-minis').innerHTML = [
+      {l:'Total POs',v:_pos.length,c:mc_colors[0]},{l:'Approved',v:ap,c:mc_colors[1]},
+      {l:'Pending Approval',v:pp,c:mc_colors[2]},{l:'Total Value',v:'LKR '+fK(tv),c:mc_colors[3]}
+    ].map((s,i)=>`<div class="mc" style="border-top-color:${s.c};animation-delay:${i*.07}s"><div class="mc-lb">${s.l}</div><div class="mc-vl" style="color:${s.c}">${s.v}</div></div>`).join('');
+    renderPOs(_pos);
+  } catch(e) { tb.innerHTML=`<tr><td colspan="9" style="color:var(--red);padding:14px">&#10060; ${e.message}</td></tr>`; }
+}
+function renderPOs(items) {
+  const tb = document.getElementById('po-tb');
+  tb.innerHTML = items.length===0
+    ? `<tr><td colspan="9">${emp('&#128196;','No purchase orders','Create a PO from a quotation')}</td></tr>`
+    : items.map((p,i)=>`<tr class="ri" style="cursor:pointer;animation-delay:${i*.04}s" onclick="openPOD('${p._id}')">
+        <td style="color:var(--blue);font-weight:700;font-family:'JetBrains Mono',monospace">#${p._id}</td>
+        <td><strong>${p.PONumber||'—'}</strong></td>
+        <td>${p.VendorName||'—'}</td>
+        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.ItemDescription||'—'}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px">LKR ${fmt(p.TotalAmount)}</td>
+        <td style="font-size:12px">${fD(p.ExpectedDelivery)}</td>
+        <td onclick="event.stopPropagation()">${flink(p.PODocumentUrl||p.PODocument,'PO Sheet')}</td>
+        <td>${bdg(p.POStatus)}</td>
+        <td style="white-space:nowrap" onclick="event.stopPropagation()">
+          <button class="btn btn-sm btn-pri" onclick="openPOD('${p._id}')">Details</button>
+          ${p.POStatus==='Pending Approval'?`<button class="btn btn-sm btn-grn" style="margin-left:3px" onclick="openM('approve-po');document.getElementById('ap-pi').value='${p._id}'">Approve</button>`:''}
+          ${p.POStatus==='Approved'?`<button class="btn btn-sm" style="margin-left:3px" onclick="openM('add-invoice');document.getElementById('iv-pi').value='${p._id}'">+Invoice</button>`:''}
+        </td>
+      </tr>`).join('');
+}
+function fPOs(s) { renderPOs(s?_pos.filter(p=>p.POStatus===s):_pos); }
+
+async function loadAprs() {
+  const tb = document.getElementById('apr-tb');
+  tb.innerHTML = `<tr><td colspan="7"><div class="ld"><div class="sp"></div><p>Loading...</p></div></td></tr>`;
+  try {
+    const items = await gGet(LISTS.Approvals);
+    tb.innerHTML = items.length===0
+      ? `<tr><td colspan="7">${emp('&#9989;','No approvals yet','Record a PO approval to see it here')}</td></tr>`
+      : items.map((a,i)=>`<tr class="ri" style="animation-delay:${i*.04}s">
+          <td style="color:var(--blue);font-weight:700;font-family:'JetBrains Mono',monospace">#${a._id}</td>
+          <td><span class="bdg bdg-submitted">#${a.POItemId||'—'}</span></td>
+          <td><strong>${a.ApproverName||'—'}</strong><br><span style="color:var(--muted);font-size:11px">${a.ApproverEmail||''}</span></td>
+          <td>${bdg(a.ApprovalAction)}</td>
+          <td style="font-size:12px">${fD(a.ActionDate)}</td>
+          <td style="color:var(--muted);font-size:12px;max-width:180px">${a.ApprovalComments||'—'}</td>
+          <td>${flink(a.ApprovalDocUrl||a.ApprovalDoc,'Signed Doc')}</td>
+        </tr>`).join('');
+  } catch(e) { tb.innerHTML=`<tr><td colspan="7" style="color:var(--red);padding:14px">&#10060; ${e.message}</td></tr>`; }
+}
+
+async function loadInvs() {
+  const tb = document.getElementById('inv-tb');
+  tb.innerHTML = `<tr><td colspan="12"><div class="ld"><div class="sp"></div><p>Loading...</p></div></td></tr>`;
+  try {
+    _invs = await gGet(LISTS.Invoices);
+    const paid=_invs.filter(i=>i.PaymentStatus==='Paid').reduce((s,i)=>s+(i.TotalAmount||0),0);
+    const pend=_invs.filter(i=>i.PaymentStatus==='Pending').reduce((s,i)=>s+(i.TotalAmount||0),0);
+    const over=_invs.filter(i=>i.PaymentStatus==='Overdue').reduce((s,i)=>s+(i.TotalAmount||0),0);
+    document.getElementById('inv-minis').innerHTML = [
+      {l:'Total Invoices',v:_invs.length,c:'#58A6FF'},{l:'Paid (LKR)',v:fK(paid),c:'#3FB950'},
+      {l:'Pending (LKR)',v:fK(pend),c:'#D29922'},{l:'Overdue (LKR)',v:fK(over),c:'#F85149'}
+    ].map((s,i)=>`<div class="mc" style="border-top-color:${s.c};animation-delay:${i*.07}s"><div class="mc-lb">${s.l}</div><div class="mc-vl" style="color:${s.c}">${s.v}</div></div>`).join('');
+    renderInvs(_invs);
+  } catch(e) { tb.innerHTML=`<tr><td colspan="12" style="color:var(--red);padding:14px">&#10060; ${e.message}</td></tr>`; }
+}
+function renderInvs(items) {
+  const tb = document.getElementById('inv-tb');
+  tb.innerHTML = items.length===0
+    ? `<tr><td colspan="12">${emp('&#129534;','No invoices yet','Add invoices after items are delivered')}</td></tr>`
+    : items.map((i,idx)=>`<tr class="ri" style="animation-delay:${idx*.04}s">
+        <td style="color:var(--blue);font-weight:700;font-family:'JetBrains Mono',monospace">#${i._id}</td>
+        <td><strong>${i.InvoiceNumber||'—'}</strong></td>
+        <td><span class="bdg bdg-submitted">#${i.POItemId||'—'}</span></td>
+        <td>${i.VendorName||'—'}</td>
+        <td style="font-size:12px">${fD(i.InvoiceDate)}</td><td style="font-size:12px">${fD(i.DueDate)}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(i.InvoiceAmount)}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(i.TaxAmount)}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px">LKR ${fmt(i.TotalAmount)}</td>
+        <td>${flink(i.InvoiceDocUrl||i.InvoiceDoc,'Invoice PDF')}</td>
+        <td>${bdg(i.PaymentStatus)}</td>
+        <td style="white-space:nowrap">
+          ${i.PaymentStatus!=='Paid'
+            ?`<button class="btn btn-sm btn-grn" onclick="markPaid('${i._id}')">&#10003; Paid</button>`
+            :`<span style="color:var(--green);font-size:11.5px;font-weight:700">&#9989; Paid</span>`}
+        </td>
+      </tr>`).join('');
+}
+function fInvs(s) { renderInvs(s?_invs.filter(i=>i.PaymentStatus===s):_invs); }
+
+async function markPaid(invId) {
+  try {
+    await gPatch(LISTS.Invoices, invId, {PaymentStatus:'Paid', PaymentDate:new Date().toISOString()});
+    toast('Invoice Paid','Payment recorded.','ok');
+    loadInvs(); loadDash();
+  } catch(e) { toast('Error',e.message,'err'); }
+}
+
+async function loadRpts() {
+  try {
+    const [reqs,pos,invs,quots] = await Promise.all([gGet(LISTS.Requests),gGet(LISTS.POs),gGet(LISTS.Invoices),gGet(LISTS.Quotations)]);
+
+    const totV = pos.reduce((s,p)=>s+(p.TotalAmount||0),0);
+    const paidA = invs.filter(i=>i.PaymentStatus==='Paid').reduce((s,i)=>s+(i.TotalAmount||0),0);
+    const outA  = invs.filter(i=>i.PaymentStatus!=='Paid').reduce((s,i)=>s+(i.TotalAmount||0),0);
+    document.getElementById('r-treq').textContent = reqs.length;
+    document.getElementById('r-tval').textContent = 'LKR '+fK(totV);
+    document.getElementById('r-paid').textContent = 'LKR '+fK(paidA);
+    document.getElementById('r-out').textContent  = 'LKR '+fK(outA);
+
+    // Trend line
+    const mM={};
+    pos.forEach(p=>{if(p.Created){const m=new Date(p.Created).toLocaleDateString('en-GB',{month:'short',year:'2-digit'});mM[m]=(mM[m]||0)+(p.TotalAmount||0);}});
+    const mK=Object.keys(mM).slice(-8);
+    mkLine('r-trend',mK.length?mK:['No data'],mK.map(k=>mM[k]),'#58A6FF');
+
+    // Invoice donut
+    const ipL=['Pending','Paid','Overdue','Partial'];
+    const ipC=['#D29922','#3FB950','#F85149','#58A6FF'];
+    const ipD=ipL.map(s=>invs.filter(i=>i.PaymentStatus===s).length);
+    const nL=[],nD=[],nC=[];
+    ipL.forEach((s,i)=>{if(ipD[i]>0){nL.push(s);nD.push(ipD[i]);nC.push(ipC[i]);}});
+    mkDonut('r-donut',nL.length?nL:['No data'],nD.length?nD:[1],nC.length?nC:['#21262D']);
+
+    // Dept spend
+    const dM={};
+    reqs.forEach(r=>{if(r.Department&&r.EstimatedBudget)dM[r.Department]=(dM[r.Department]||0)+(r.EstimatedBudget||0);});
+    const deps=Object.entries(dM).sort((a,b)=>b[1]-a[1]);
+    const mxD=Math.max(...deps.map(d=>d[1]),1);
+    const dC3=['#58A6FF','#3FB950','#D29922','#BC8CFF','#F85149','#F0883E'];
+    document.getElementById('r-dept').innerHTML = deps.length===0 ? emp('&#127970;','No data','Add requests with dept info')
+      : deps.map(([d,v],i)=>`<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="font-weight:700">${d}</span><strong style="font-family:'JetBrains Mono',monospace;font-size:11.5px">LKR ${fmt(v)}</strong></div><div class="prog"><div class="pf" style="width:${Math.round(v/mxD*100)}%;background:${dC3[i%6]}"></div></div></div>`).join('');
+
+    // Vendors
+    const vM={};
+    quots.forEach(q=>{if(q.VendorName)vM[q.VendorName]=(vM[q.VendorName]||0)+(q.TotalAmount||0);});
+    const vends=Object.entries(vM).sort((a,b)=>b[1]-a[1]).slice(0,7);
+    document.getElementById('r-vend').innerHTML = vends.length===0 ? emp('&#127942;','No vendor data','Add quotations')
+      : `<table style="width:100%"><thead><tr><th>#</th><th>Vendor</th><th>Total Quoted</th><th>Quotes</th></tr></thead><tbody>`
+        +vends.map(([v,val],i)=>`<tr class="ri" style="animation-delay:${i*.04}s"><td style="font-size:16px">${['&#127945;','&#127946;','&#129352;','4','5','6','7'][i]}</td><td><strong>${v}</strong></td><td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(val)}</td><td style="text-align:center">${quots.filter(q=>q.VendorName===v).length}</td></tr>`).join('')+'</tbody></table>';
+
+    // Priority bar
+    const prL=['Low','Medium','High','Urgent'];
+    const prC=['#484F58','#58A6FF','#D29922','#F85149'];
+    const prD=prL.map(p=>reqs.filter(r=>r.Priority===p).length);
+    mkBar('r-pri',prL,prD,prC);
+
+  } catch(e) { toast('Reports Error',e.message,'err'); }
+}
+
+// ═══════════════════════════════════════════════════
+// PO FULL DETAIL MODAL
+// ═══════════════════════════════════════════════════
+async function openPOD(poId) {
+  openM('po-detail');
+  document.getElementById('po-dtitle').textContent = 'Loading...';
+  document.getElementById('po-dbody').innerHTML = `<div class="ld"><div class="sp"></div><p>Loading details, quotations, approvals and invoices...</p></div>`;
+  try {
+    const po = await gGetOne(LISTS.POs, poId);
+    const [allQ,apprs,invs] = await Promise.all([
+      po.RequestItemId ? gGet(LISTS.Quotations,`fields/RequestItemId eq ${po.RequestItemId}`) : Promise.resolve([]),
+      gGet(LISTS.Approvals, `fields/POItemId eq ${poId}`),
+      gGet(LISTS.Invoices, `fields/POItemId eq ${poId}`)
+    ]);
+
+    document.getElementById('po-dtitle').textContent = `${po.PONumber||'PO #'+poId} — Full Details`;
+
+    const steps=['Request','Quotations','PO Created','Approved','Sent to Vendor','Invoice','Closed'];
+    const sMap={'Draft':2,'Pending Approval':2,'Approved':3,'Sent to Vendor':4,'Completed':6,'Closed':6};
+    const cur=sMap[po.POStatus]||2;
+    const flowH=steps.map((s,i)=>`<div class="ss ${i<cur?'done':i===cur?'cur':'nxt'}">${s}</div>${i<steps.length-1?'<div class="sa">&#8250;</div>':''}`).join('');
+
+    document.getElementById('po-dbody').innerHTML = `
+      <div style="margin-bottom:20px">
+        <div style="font-size:9.5px;color:var(--muted);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.8px">PROCUREMENT FLOW</div>
+        <div class="sf">${flowH}</div>
+      </div>
+      <div class="kr">
+        <div class="kpi"><div class="kv">LKR ${fmt(po.SubTotal)}</div><div class="kl">Sub Total</div></div>
+        <div class="kpi"><div class="kv">${po.TaxPercent||0}%</div><div class="kl">Tax Rate</div></div>
+        <div class="kpi"><div class="kv">LKR ${fmt(po.TaxAmount)}</div><div class="kl">Tax Amount</div></div>
+        <div class="kpi dk"><div class="kv">LKR ${fmt(po.TotalAmount)}</div><div class="kl">Grand Total</div></div>
+      </div>
+      <div class="tabs">
+        <button class="tbb on" onclick="swT('pod-info',this)">&#128196; PO Details</button>
+        <button class="tbb" onclick="swT('pod-quots',this)">&#128172; Quotations (${allQ.length})</button>
+        <button class="tbb" onclick="swT('pod-apprs',this)">&#9989; Approvals (${apprs.length})</button>
+        <button class="tbb" onclick="swT('pod-invs',this)">&#129534; Invoice (${invs.length})</button>
+      </div>
+
+      <!-- PO DETAILS -->
+      <div id="tab-pod-info">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid var(--blue-bg);margin-bottom:9px">Purchase Order</div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px"><span style="color:var(--muted)">PO Number</span><strong style="color:var(--blue);font-family:'JetBrains Mono',monospace">${po.PONumber||'—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px"><span style="color:var(--muted)">Status</span><span>${bdg(po.POStatus)}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px"><span style="color:var(--muted)">Created</span><strong>${fD(po.Created)}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px"><span style="color:var(--muted)">Approved By</span><strong>${po.ApprovedBy||'—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px"><span style="color:var(--muted)">Expected Delivery</span><strong>${fD(po.ExpectedDelivery)}</strong></div>
+            ${(po.PODocumentUrl||po.PODocument)?`<div style="margin-top:9px">${flink(po.PODocumentUrl||po.PODocument,'Download PO Sheet')}</div>`:''}
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid var(--blue-bg);margin-bottom:9px">Vendor</div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px"><span style="color:var(--muted)">Vendor</span><strong>${po.VendorName||'—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px"><span style="color:var(--muted)">Email</span><strong>${po.VendorEmail||'—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px"><span style="color:var(--muted)">Delivery Address</span><strong style="text-align:right;max-width:55%">${po.DeliveryAddress||'—'}</strong></div>
+          </div>
+        </div>
+        <table style="margin-bottom:12px"><thead><tr><th>Item Description</th><th>Qty</th><th>Unit Price (LKR)</th><th>Sub Total (LKR)</th></tr></thead>
+        <tbody><tr><td>${po.ItemDescription||'—'}</td><td style="text-align:center;font-weight:700">${po.Quantity||'—'}</td><td style="font-family:'JetBrains Mono',monospace">LKR ${fmt(po.UnitPrice)}</td><td style="font-family:'JetBrains Mono',monospace;font-weight:700">LKR ${fmt(po.SubTotal)}</td></tr></tbody></table>
+        <div style="text-align:right;padding:13px 16px;background:var(--blue-bg);border-radius:9px;border:1px solid rgba(88,166,255,.2)">
+          <div style="font-size:12px;color:var(--muted)">Sub Total: <strong style="font-family:'JetBrains Mono',monospace">LKR ${fmt(po.SubTotal)}</strong></div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Tax (${po.TaxPercent||0}%): <strong style="font-family:'JetBrains Mono',monospace">LKR ${fmt(po.TaxAmount)}</strong></div>
+          <div style="font-size:20px;font-weight:800;color:var(--txt);margin-top:8px;padding-top:8px;border-top:1px solid rgba(88,166,255,.3);font-family:'Sora',sans-serif">TOTAL: LKR ${fmt(po.TotalAmount)}</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-pri" onclick="window.print()">&#128424; Print PO</button>
+          <button class="btn">&#128231; Send to Vendor</button>
+        </div>
+      </div>
+
+      <!-- QUOTATIONS TAB -->
+      <div id="tab-pod-quots" style="display:none">
+        ${allQ.length===0 ? emp('&#128172;','No quotations','No quotations found for this request')
+          : allQ.sort((a,b)=>(a.TotalAmount||0)-(b.TotalAmount||0)).map((q,i)=>`
+              <div class="qc ${q.QuotationStatus==='Selected'?'sel':''} ${i===0?'low':''}">
+                <div class="qct">
+                  <div class="qcv">${i===0?'<span style="font-size:20px">&#127945;</span>':''}<strong>${q.VendorName||'—'}</strong>${bdg(q.QuotationStatus)}${i===0?`<span class="bdg bdg-submitted">Lowest Price</span>`:''}</div>
+                  <div class="qcp">LKR ${fmt(q.TotalAmount)}</div>
+                </div>
+                <div class="qm">
+                  <div><div class="qml">Unit Price</div><strong>LKR ${fmt(q.UnitPrice)}</strong></div>
+                  <div><div class="qml">Quantity</div><strong>${q.Quantity||'—'}</strong></div>
+                  <div><div class="qml">Delivery</div><strong>${q.DeliveryDays?q.DeliveryDays+' days':'—'}</strong></div>
+                  <div><div class="qml">Warranty</div><strong>${q.WarrantyPeriod||'—'}</strong></div>
+                </div>
+                ${q.Specifications?`<div style="margin-top:9px;font-size:11.5px;color:var(--muted);padding:7px 10px;background:var(--bg4);border-radius:7px;border-left:3px solid var(--border2)">${q.Specifications}</div>`:''}
+                ${(q.DocumentUrl||q.QuotationDoc)?`<div style="margin-top:8px">${flink(q.DocumentUrl||q.QuotationDoc,'Download Quotation Document')}</div>`:''}
+              </div>`).join('')}
+      </div>
+
+      <!-- APPROVALS TAB -->
+      <div id="tab-pod-apprs" style="display:none">
+        ${apprs.length===0
+          ? `<div>${emp('&#9989;','No approvals yet','')}<div style="text-align:center"><button class="btn btn-pri" onclick="closeM('po-detail');openM('approve-po');document.getElementById('ap-pi').value='${poId}'">Record Approval</button></div></div>`
+          : `<ul class="tl">${apprs.map(a=>`
+              <li class="tli"><div class="tld ${a.ApprovalAction==='Approved'?'ok':a.ApprovalAction==='Rejected'?'err':''}"></div>
+              <div><div class="tl-ti">${a.ApprovalAction} by ${a.ApproverName||'—'}</div>
+              <div class="tl-su">${fD(a.ActionDate)} · ${a.ApproverEmail||''}</div>
+              ${a.ApprovalComments?`<div class="tl-q ${(a.ApprovalAction||'').toLowerCase()}">"${a.ApprovalComments}"</div>`:''}
+              ${(a.ApprovalDocUrl||a.ApprovalDoc)?`<div style="margin-top:7px">${flink(a.ApprovalDocUrl||a.ApprovalDoc,'Download Signed Approval Document')}</div>`:''}
+              </div></li>`).join('')}</ul>`}
+      </div>
+
+      <!-- INVOICE TAB -->
+      <div id="tab-pod-invs" style="display:none">
+        ${invs.length===0
+          ? `<div>${emp('&#129534;','No invoice yet','')}<div style="text-align:center"><button class="btn btn-pri" onclick="closeM('po-detail');openM('add-invoice');document.getElementById('iv-pi').value='${poId}'">+ Add Invoice</button></div></div>`
+          : invs.map(i=>`
+              <div style="border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:11px;background:var(--bg3)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:13px">
+                  <strong style="font-size:16px;font-family:'JetBrains Mono',monospace">${i.InvoiceNumber||'—'}</strong>
+                  <div style="display:flex;gap:6px;align-items:center">
+                    ${bdg(i.PaymentStatus)}
+                    ${i.PaymentStatus!=='Paid'?`<button class="btn btn-sm btn-grn" onclick="markPaid('${i._id}')">&#10003; Mark Paid</button>`:'<span style="color:var(--green);font-weight:700;font-size:12px">&#9989; Paid</span>'}
+                  </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px">
+                  <div style="display:flex;flex-direction:column;gap:5px">
+                    <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Vendor</span><strong>${i.VendorName||'—'}</strong></div>
+                    <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Invoice Date</span><strong>${fD(i.InvoiceDate)}</strong></div>
+                    <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Due Date</span><strong>${fD(i.DueDate)}</strong></div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:5px">
+                    <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Invoice Amount</span><strong style="font-family:'JetBrains Mono',monospace">LKR ${fmt(i.InvoiceAmount)}</strong></div>
+                    <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Tax</span><strong style="font-family:'JetBrains Mono',monospace">LKR ${fmt(i.TaxAmount)}</strong></div>
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;background:var(--blue-bg);padding:11px 14px;border-radius:8px;margin-top:12px;border:1px solid rgba(88,166,255,.2)">
+                  <strong>TOTAL</strong><strong style="font-size:19px;font-family:'Sora',sans-serif">LKR ${fmt(i.TotalAmount)}</strong>
+                </div>
+                ${(i.InvoiceDocUrl||i.InvoiceDoc)?`<div style="margin-top:10px">${flink(i.InvoiceDocUrl||i.InvoiceDoc,'Download Invoice Document')}</div>`:''}
+                ${i.Notes?`<div style="font-size:11.5px;color:var(--muted);margin-top:8px;padding:6px 9px;background:var(--bg4);border-radius:7px">${i.Notes}</div>`:''}
+              </div>`).join('')}
+      </div>
+    `;
+  } catch(e) {
+    document.getElementById('po-dbody').innerHTML = `<div style="color:var(--red);padding:28px;text-align:center"><div style="font-size:36px;margin-bottom:12px">&#10060;</div><strong>Error loading details</strong><br><span style="font-size:12.5px;color:var(--muted)">${e.message}</span></div>`;
+  }
+}
+
+function swT(name, btn) {
+  document.querySelectorAll('#po-dbody>div[id^="tab-"]').forEach(p=>p.style.display='none');
+  document.querySelectorAll('#po-dbody .tbb').forEach(b=>b.classList.remove('on'));
+  const p=document.getElementById('tab-'+name); if(p){p.style.display='block';p.style.animation='fadeUp .25s ease';}
+  if(btn) btn.classList.add('on');
+}
+
+// ── CALC HELPERS ──
+function cQ() { const p=Number(document.getElementById('aq-up').value)||0,q=Number(document.getElementById('aq-qt').value)||0; document.getElementById('aq-tot').textContent='LKR '+fmt(p*q); }
+function cPO() {
+  const p=Number(document.getElementById('cp-up').value)||0,q=Number(document.getElementById('cp-qt').value)||0,t=Number(document.getElementById('cp-tx').value)||0;
+  const s=p*q,ta=s*(t/100);
+  document.getElementById('cp-sub').textContent='LKR '+fmt(s);
+  document.getElementById('cp-txamt').textContent='LKR '+fmt(ta);
+  document.getElementById('cp-tot').textContent='LKR '+fmt(s+ta);
+}
+function cInv() { const a=Number(document.getElementById('iv-am').value)||0,t=Number(document.getElementById('iv-tx').value)||0; document.getElementById('iv-tot').textContent='LKR '+fmt(a+t); }
+
+// ── FORM SUBMISSIONS ──
+async function subReq() {
+  const title=document.getElementById('nr-ti').value.trim(), by=document.getElementById('nr-by').value.trim();
+  if(!title||!by){toast('Validation Error','Title and Requested By are required','warn');return;}
+  try {
+    const id = await gPost(LISTS.Requests,{Title:title,RequestTitle:title,ItemDescription:document.getElementById('nr-de').value,RequestedBy:by,Department:document.getElementById('nr-dp').value,QuantityRequired:Number(document.getElementById('nr-qt').value)||1,EstimatedBudget:Number(document.getElementById('nr-bu').value)||0,Priority:document.getElementById('nr-pr').value,RequestStatus:'Submitted',RequiredByDate:document.getElementById('nr-dt').value||null,Justification:document.getElementById('nr-ju').value});
+    toast('Request Submitted','Request #'+id+' created.','ok');
+    closeM('new-request'); refreshAll();
+  } catch(e) { toast('Error',e.message,'err'); }
+}
+
+async function subQut() {
+  const reqId=document.getElementById('aq-ri').value,vendor=document.getElementById('aq-vn').value.trim();
+  const price=Number(document.getElementById('aq-up').value),qty=Number(document.getElementById('aq-qt').value);
+  if(!reqId||!vendor||!price||!qty){toast('Validation Error','Request ID, Vendor, Price and Qty required','warn');return;}
+  let docUrl=null;
+  const fi=document.getElementById('aq-fl');
+  if(fi.files[0]){toast('Uploading','Uploading quotation document...','warn');docUrl=await uploadFile(fi.files[0],DOC_LIB+'/Quotations');}
+  try {
+    const id = await gPost(LISTS.Quotations,{Title:`${vendor} - Quote #${reqId}`,RequestItemId:Number(reqId),VendorName:vendor,VendorEmail:document.getElementById('aq-ve').value,UnitPrice:price,Quantity:qty,TotalAmount:price*qty,DeliveryDays:Number(document.getElementById('aq-dd').value)||0,WarrantyPeriod:document.getElementById('aq-wa').value,Specifications:document.getElementById('aq-sp').value,QuotationStatus:'Received',ValidUntil:document.getElementById('aq-vu').value||null,DocumentUrl:docUrl,QuotationDoc:docUrl});
+    await gPatch(LISTS.Requests,reqId,{RequestStatus:'Quotation Pending'});
+    toast('Quotation Saved','#'+id+(docUrl?' with document':''),'ok');
+    closeM('add-quotation'); refreshAll();
+  } catch(e) { toast('Error',e.message,'err'); }
+}
+
+function genPO(){const d=new Date();return`PO-${d.getFullYear().toString().slice(-2)}${String(d.getMonth()+1).padStart(2,'0')}-${Math.floor(Math.random()*9000)+1000}`;}
+
+async function subPO() {
+  const reqId=document.getElementById('cp-ri').value,quotId=document.getElementById('cp-qi').value;
+  const vendor=document.getElementById('cp-vn').value.trim(),item=document.getElementById('cp-it').value.trim();
+  const qty=Number(document.getElementById('cp-qt').value),price=Number(document.getElementById('cp-up').value);
+  if(!reqId||!quotId||!vendor||!item||!qty||!price){toast('Validation Error','All required fields must be filled','warn');return;}
+  const tax=Number(document.getElementById('cp-tx').value)||0,sub=qty*price,taxAmt=sub*(tax/100),total=sub+taxAmt,poNum=genPO();
+  let docUrl=null;
+  const fi=document.getElementById('cp-fl');
+  if(fi.files[0]){toast('Uploading','Uploading PO document...','warn');docUrl=await uploadFile(fi.files[0],DOC_LIB+'/PurchaseOrders');}
+  try {
+    const id = await gPost(LISTS.POs,{Title:poNum,PONumber:poNum,RequestItemId:Number(reqId),QuotationItemId:Number(quotId),VendorName:vendor,VendorEmail:document.getElementById('cp-ve').value,ItemDescription:item,Quantity:qty,UnitPrice:price,SubTotal:sub,TaxPercent:tax,TaxAmount:taxAmt,TotalAmount:total,POStatus:'Pending Approval',DeliveryAddress:document.getElementById('cp-ad').value,ExpectedDelivery:document.getElementById('cp-de').value||null,Remarks:document.getElementById('cp-re').value,PODocumentUrl:docUrl,PODocument:docUrl});
+    await gPatch(LISTS.Quotations,quotId,{QuotationStatus:'Selected'});
+    await gPatch(LISTS.Requests,reqId,{RequestStatus:'PO Created'});
+    toast('PO Created',poNum+' (ID:'+id+')'+(docUrl?' with document':''),'ok');
+    closeM('create-po'); refreshAll();
+  } catch(e) { toast('Error',e.message,'err'); }
+}
+
+async function subApr() {
+  const poId=document.getElementById('ap-pi').value,name=document.getElementById('ap-nm').value.trim(),action=document.getElementById('ap-ac').value;
+  if(!poId||!name){toast('Validation Error','PO ID and Approver Name required','warn');return;}
+  let docUrl=null;
+  const fi=document.getElementById('ap-fl');
+  if(fi.files[0]){toast('Uploading','Uploading approval document...','warn');docUrl=await uploadFile(fi.files[0],DOC_LIB+'/Approvals');}
+  try {
+    await gPost(LISTS.Approvals,{Title:`${action} by ${name}`,POItemId:Number(poId),ApproverName:name,ApproverEmail:document.getElementById('ap-em').value,ApprovalAction:action,ApprovalComments:document.getElementById('ap-co').value,ActionDate:new Date().toISOString(),ApprovalDocUrl:docUrl,ApprovalDoc:docUrl});
+    const ns=action==='Approved'?'Approved':'Rejected';
+    await gPatch(LISTS.POs,poId,{POStatus:ns,ApprovedBy:name,ApprovalDate:new Date().toISOString()});
+    if(action==='Approved'){try{const po=await gGetOne(LISTS.POs,poId);if(po.RequestItemId)await gPatch(LISTS.Requests,po.RequestItemId,{RequestStatus:'PO Approved'});}catch(_){}}
+    toast('Approval Recorded','PO '+action.toLowerCase()+(docUrl?' — document uploaded':''),'ok');
+    closeM('approve-po'); refreshAll();
+  } catch(e) { toast('Error',e.message,'err'); }
+}
+
+async function subInv() {
+  const invNum=document.getElementById('iv-nu').value.trim(),poId=document.getElementById('iv-pi').value,amount=Number(document.getElementById('iv-am').value);
+  if(!invNum||!poId||!amount){toast('Validation Error','Invoice Number, PO ID and Amount required','warn');return;}
+  const tax=Number(document.getElementById('iv-tx').value)||0;
+  let docUrl=null;
+  const fi=document.getElementById('iv-fl');
+  if(fi.files[0]){toast('Uploading','Uploading invoice document...','warn');docUrl=await uploadFile(fi.files[0],DOC_LIB+'/Invoices');}
+  try {
+    const id = await gPost(LISTS.Invoices,{Title:invNum,InvoiceNumber:invNum,POItemId:Number(poId),VendorName:document.getElementById('iv-vn').value,InvoiceDate:document.getElementById('iv-dt').value||null,DueDate:document.getElementById('iv-du').value||null,InvoiceAmount:amount,TaxAmount:tax,TotalAmount:amount+tax,PaymentStatus:'Pending',Notes:document.getElementById('iv-nt').value,InvoiceDocUrl:docUrl,InvoiceDoc:docUrl});
+    toast('Invoice Saved','#'+id+(docUrl?' with document':''),'ok');
+    closeM('add-invoice'); refreshAll();
+  } catch(e) { toast('Error',e.message,'err'); }
+}
+
+// ── SEARCH & REFRESH ──
+function gSearch(q){document.querySelectorAll('.view.on tbody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q.toLowerCase())?'':' none';});}
+let _rfg=false;
+function refreshAll(){
+  if(_rfg)return; _rfg=true;
+  const ic=document.getElementById('rfic'); ic.style.animation='spin .7s linear infinite';
+  const id=document.querySelector('.view.on')?.id?.replace('view-','');
+  const p=[loadDash()];
+  if(id==='requests')p.push(loadReqs());if(id==='quotations')p.push(loadQuts());
+  if(id==='purchase-orders')p.push(loadPOs());if(id==='approvals')p.push(loadAprs());
+  if(id==='invoices')p.push(loadInvs());if(id==='reports')p.push(loadRpts());
+  Promise.all(p).finally(()=>{ic.style.animation='';_rfg=false;});
+}
+
+// ── INTERACTIVE GUIDE ──
+const GUIDE=[
+  {el:'stats-grid',ti:'&#128202; Live Dashboard Stats',de:'Four cards showing live data from SharePoint — requests, POs, total PO value, and pending invoices. All updated in real time.',pos:'bot'},
+  {el:'nav-requests',ti:'&#128203; Create Requests',de:'Start every procurement here. Click + New Request to submit any item with department, budget, specs and required-by date.',pos:'rgt'},
+  {el:'nav-quotations',ti:'&#128172; Quotations + PDF Upload',de:'Add vendor quotes and upload the actual quotation PDF or Excel. The cheapest quote gets a trophy medal in Full Details view.',pos:'rgt'},
+  {el:'nav-purchase-orders',ti:'&#128196; POs + Excel Upload',de:'Create POs from quotations and upload your signed PO Excel sheet. Click any row to open Full Details with all quotes, approvals and invoices.',pos:'rgt'},
+  {el:'nav-approvals',ti:'&#9989; Approvals + Signed Documents',de:'Record manager approvals and upload the signed approval document for a complete audit trail. Status updates automatically.',pos:'rgt'},
+  {el:'nav-invoices',ti:'&#129534; Invoices + Invoice PDF Upload',de:'Attach the vendor invoice PDF to each record. Mark as Paid with one click. Dashboard charts update immediately.',pos:'rgt'},
+  {el:'nav-reports',ti:'&#128200; Rich Analytics — 6 Charts',de:'Monthly PO trend, PO status donut, invoice payment health, department spend bars, vendor rankings table and priority breakdown.',pos:'rgt'},
+  {el:'nav-hosting',ti:'&#127760; Free Hosting — No Azure Needed!',de:'Complete guide to host free with GitHub Pages + Cloudflare Workers. No Azure subscription needed. Total cost: $0. Press ? anytime to restart.',pos:'rgt'}
+];
+let gStep=0;
+function startG(){gStep=0;document.getElementById('gOv').classList.add('open');renderG();}
+function endG(){document.getElementById('gOv').classList.remove('open');}
+function nextG(){gStep++;if(gStep>=GUIDE.length){endG();return;}renderG();}
+function renderG(){
+  const s=GUIDE[gStep],tot=GUIDE.length;
+  document.getElementById('gL').textContent=`Step ${gStep+1} of ${tot}`;
+  document.getElementById('gT').innerHTML=s.ti;
+  document.getElementById('gD').textContent=s.de;
+  document.getElementById('gN').textContent=gStep===tot-1?'Finish':'Next &#8594;';
+  document.getElementById('gDo').innerHTML=Array.from({length:tot},(_,i)=>`<div class="gd ${i===gStep?'on':''}"></div>`).join('');
+  const el=document.getElementById(s.el),tip=document.getElementById('gTp'),sp=document.getElementById('gSp');
+  if(el){
+    const rect=el.getBoundingClientRect(),pd=7;
+    sp.style.cssText=`left:${rect.left-pd}px;top:${rect.top-pd}px;width:${rect.width+pd*2}px;height:${rect.height+pd*2}px;`;
+    tip.className=`gtp ${s.pos==='bot'?'bot':'rgt'}`;
+    if(s.pos==='bot'){tip.style.left=Math.max(8,rect.left)+'px';tip.style.top=(rect.bottom+18)+'px';}
+    else{tip.style.left=(rect.right+18)+'px';tip.style.top=Math.max(8,rect.top-20)+'px';}
+  }
+}
+
+// ── INIT ──
+if(!API){
+  setConn('err','URL not set');
+  setTimeout(()=>toast('Setup Required','Go to Settings tab and enter your Cloudflare Worker URL to connect to SharePoint','warn'),800);
+} else {
+  loadDash();
+}
+setInterval(()=>{if(API)loadDash();},5*60*1000);
+</script>
+</body>
+</html>
