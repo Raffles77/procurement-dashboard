@@ -426,7 +426,7 @@ select.fc option{background:#FFFFFF;color:var(--txt);}
   <th>Item Description</th>
   <th style="width:120px">Requested By</th>
   <th style="width:90px">Department</th>
-  <th style="width:70px">Type</th>
+  <th style="width:80px">Exp. Type</th>
   <th style="width:120px">Budget (LKR)</th>
   <th style="width:80px">Priority</th>
   <th style="width:120px">Status</th>
@@ -448,7 +448,7 @@ select.fc option{background:#FFFFFF;color:var(--txt);}
   <th>Item Description</th>
   <th style="width:110px">Requested By</th>
   <th style="width:90px">Department</th>
-  <th style="width:70px">Type</th>
+  <th style="width:80px">Exp. Type</th>
   <th style="width:45px">Qty</th>
   <th style="width:120px">Budget (LKR)</th>
   <th style="width:80px">Priority</th>
@@ -856,12 +856,51 @@ git push origin main</div>
   <div class="mf"><button class="btn" onclick="closeM('po-detail')">Close</button><button class="btn btn-pri" onclick="closeM('po-detail');openM('add-invoice')">+ Add Invoice</button></div>
   </div>
 </div>
+
+<!-- EDIT REQUEST MODAL -->
+<div class="mo" id="modal-edit-request">
+  <div class="modal"><div class="mh"><div class="mt">&#9998; Edit Procurement Request</div><button class="mx" onclick="closeM('edit-request')">&#10005;</button></div>
+  <div class="mb">
+    <input type="hidden" id="er-id">
+    <div class="fr"><div class="fg"><label class="fl">Item Title <span class="req">*</span></label><input class="fc" id="er-ti" placeholder="e.g. Dell Laptop for IT"></div><div class="fg"><label class="fl">Priority <span class="req">*</span></label><select class="fc" id="er-pr"><option>Low</option><option>Medium</option><option>High</option><option>Urgent</option></select></div></div>
+    <div class="fg"><label class="fl">Description / Specifications</label><textarea class="fc" id="er-de" rows="2"></textarea></div>
+    <div class="fr"><div class="fg"><label class="fl">Requested By <span class="req">*</span></label><input class="fc" id="er-by"></div><div class="fg"><label class="fl">Department <span class="req">*</span></label><select class="fc" id="er-dp"><option>HO</option><option>RESIDENCE</option><option>KELANIYA</option><option>INDUSTRIAL</option><option>CBR</option><option>SUMMER</option><option>OTHER</option></select></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Quantity <span class="req">*</span></label><input class="fc" id="er-qt" type="number" min="1"></div><div class="fg"><label class="fl">Estimated Budget (LKR)</label><input class="fc" id="er-bu" type="number"></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Required By Date</label><input class="fc" id="er-dt" type="date"></div><div class="fg"><label class="fl">Status</label><select class="fc" id="er-st"><option>Draft</option><option>Submitted</option><option>Quotation Pending</option><option>PO Created</option><option>PO Approved</option><option>Closed</option></select></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Expenditure Type</label><select class="fc" id="er-exptype"><option value="">— Not Set —</option><option>Capex</option><option>Opex</option></select></div><div class="fg"><label class="fl">Cost Centre / Project</label><input class="fc" id="er-cc" placeholder="e.g. IT-2025-001"></div></div>
+    <div class="fg"><label class="fl">Justification</label><input class="fc" id="er-ju"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeM('edit-request')">Cancel</button><button class="btn btn-pri" onclick="addRip(event);saveEditReq()">&#9998; Save Changes</button></div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE MODAL -->
+<div class="mo" id="modal-confirm-delete">
+  <div class="modal" style="max-width:420px"><div class="mh"><div class="mt" style="color:var(--red)">&#128465; Delete Request</div><button class="mx" onclick="closeM('confirm-delete')">&#10005;</button></div>
+  <div class="mb">
+    <div style="text-align:center;padding:10px 0">
+      <div style="font-size:40px;margin-bottom:12px">&#9888;</div>
+      <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:8px">Delete this request?</div>
+      <div id="del-req-info" style="font-size:13px;color:var(--muted);margin-bottom:16px"></div>
+      <div style="background:var(--red-bg);border:1px solid rgba(220,38,38,.2);border-radius:9px;padding:10px;font-size:12.5px;color:var(--red)">This action cannot be undone. The request will be permanently deleted from SharePoint.</div>
+    </div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeM('confirm-delete')">Cancel</button><button class="btn" style="background:var(--red);color:white;border-color:var(--red)" onclick="addRip(event);confirmDelete()" id="del-confirm-btn">&#128465; Yes, Delete</button></div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════
 // CONFIGURATION — enter your Cloudflare Worker URL
 // in the Settings tab after deployment
 // ═══════════════════════════════════════════════════
 let API = localStorage.getItem('pf_api_url') || '';
+
+// ─── Template helpers to avoid triple-nested template literals ───
+function mkIf(cond, html) { return cond ? html : ''; }
+function mkCls(val, yes, no) { return val===yes ? no : ''; }
+
+
 const LISTS = {
   Requests:   '6e83b607-300e-4a91-b5f4-81addf2419b2',
   Quotations: '264642ba-bcf9-48da-b24d-71606ff15b4c',
@@ -880,15 +919,15 @@ function setConn(s, t) {
 // ── API calls ──
 async function api(path, method='GET', body=null) {
   if (!API) throw new Error('Cloudflare Worker URL not set — go to Settings tab');
-  // Ensure https:// prefix and no trailing slash
   const base = API.replace(/\/+$/, '');
   const fullBase = base.startsWith('http') ? base : 'https://' + base;
   const url = `${fullBase}/api/${path}`;
   const opts = { method, headers: {'Content-Type':'application/json'} };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(url, opts);
+  if (r.status === 204 || r.headers.get('content-length') === '0') return {};
   const d = await r.json();
-  if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
+  if (d && d.error) throw new Error(d.error.message || JSON.stringify(d.error));
   return d;
 }
 async function gGet(listId, filter) {
@@ -1298,12 +1337,12 @@ async function loadDash() {
     // Action table
     const ai = reqs.filter(r=>r.RequestStatus==='Submitted'||r.RequestStatus==='Quotation Pending').slice(0,6);
     document.getElementById('ds-tbl').innerHTML = ai.length===0
-      ? `<tr><td colspan="8">${emp('&#9989;','No actions needed','All requests progressing normally')}</td></tr>`
+      ? `<tr><td colspan="9">${emp('&#9989;','No actions needed','All requests progressing normally')}</td></tr>`
       : ai.map((r,i)=>`<tr class="ri" style="animation-delay:${i*.05}s">
           <td style="color:var(--blue);font-weight:700;font-family:'JetBrains Mono',monospace">#${r._id}</td>
           <td><strong>${r.Title||'—'}</strong><br><span style="color:var(--muted);font-size:11px">${r.ItemDescription||''}</span></td>
           <td>${r.RequestedBy||'—'}</td><td>${r.Department||'—'}</td>
-          <td>${r.ExpenditureType?`<span class="bdg ${r.ExpenditureType==='Capex'?'bdg-purple':'bdg-submitted'}">${r.ExpenditureType}</span>`:'—'}</td>
+          <td title="Expenditure Type: Capex or Opex">${r.ExpenditureType?('<span class="bdg '+(r.ExpenditureType==='Capex'?'bdg-purple':'bdg-submitted')+'">'+r.ExpenditureType+'</span>'):'<span style="color:var(--subtle);font-size:11px">Not set</span>'}</td>
           <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(r.EstimatedBudget)}</td>
           <td>${bdg(r.Priority)}</td><td>${bdg(r.RequestStatus)}</td>
           <td style="white-space:nowrap">
@@ -1339,15 +1378,16 @@ function renderReqs(items) {
         <td style="color:var(--blue);font-weight:700;font-family:'JetBrains Mono',monospace">#${r._id}</td>
         <td><strong>${r.Title||'—'}</strong><br><span style="color:var(--muted);font-size:11px">${r.ItemDescription||''}</span></td>
         <td>${r.RequestedBy||'—'}</td><td>${r.Department||'—'}</td>
-        <td>${r.ExpenditureType?`<span class="bdg ${r.ExpenditureType==='Capex'?'bdg-purple':'bdg-submitted'}">${r.ExpenditureType}</span>`:'—'}</td>
+        <td>${r.ExpenditureType?('<span class="bdg '+(r.ExpenditureType==='Capex'?'bdg-purple':'bdg-submitted')+'">'+r.ExpenditureType+'</span>'):'—'}</td>
         <td style="text-align:center;font-weight:700">${r.QuantityRequired||'—'}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(r.EstimatedBudget)}</td>
         <td>${bdg(r.Priority)}</td><td>${bdg(r.RequestStatus)}</td>
         <td style="font-size:12px">${fD(r.RequiredByDate)}</td>
-        <td style="white-space:nowrap">
+                <td style="white-space:nowrap">
           <button class="btn btn-sm" onclick="openReqDetail('${r._id}')">&#128269; View</button>
+          <button class="btn btn-sm" style="margin-left:3px;background:#EFF6FF;color:var(--blue);border-color:#BFDBFE" onclick="editReqById('${r._id}')">&#9998; Edit</button>
+          <button class="btn btn-sm" style="margin-left:3px;background:#FEF2F2;color:var(--red);border-color:#FECACA" onclick="delReqById('${r._id}')">&#128465;</button>
           <button class="btn btn-sm btn-pri" style="margin-left:3px" onclick="openM('add-quotation');document.getElementById('aq-ri').value='${r._id}'">+Quote</button>
-          <button class="btn btn-sm" style="margin-left:3px;background:#F0FDF4;color:var(--green);border-color:#BBF7D0" onclick="openM('create-po');document.getElementById('cp-ri').value='${r._id}'">+PO</button>
         </td>
       </tr>`).join('');
 }
@@ -1407,8 +1447,8 @@ function renderPOs(items) {
         <td>${bdg(p.POStatus)}</td>
         <td style="white-space:nowrap" onclick="event.stopPropagation()">
           <button class="btn btn-sm btn-pri" onclick="openPOD('${p._id}')">Details</button>
-          ${p.POStatus==='Pending Approval'?`<button class="btn btn-sm btn-grn" style="margin-left:3px" onclick="openM('approve-po');document.getElementById('ap-pi').value='${p._id}'">Approve</button>`:''}
-          ${p.POStatus==='Approved'?`<button class="btn btn-sm" style="margin-left:3px" onclick="openM('add-invoice');document.getElementById('iv-pi').value='${p._id}'">+Invoice</button>`:''}
+          ${p.POStatus==='Pending Approval'?'<button class="btn btn-sm btn-grn" style="margin-left:3px" onclick="openM(\'approve-po\');document.getElementById(\'ap-pi\').value=\''+p._id+'\'">Approve</button>':''}
+          ${p.POStatus==='Approved'?'<button class="btn btn-sm" style="margin-left:3px" onclick="openM(\'add-invoice\');document.getElementById(\'iv-pi\').value=\''+p._id+'\'">+Invoice</button>':''}
         </td>
       </tr>`).join('');
 }
@@ -1558,308 +1598,334 @@ async function loadRpts() {
 // REQUEST DETAIL MODAL — opens when View is clicked in Requests table
 // ═══════════════════════════════════════════════
 async function openReqDetail(reqId) {
-  // Reuse po-detail modal with different content
   openM('po-detail');
-  document.getElementById('po-dtitle').textContent = 'Loading Request #' + reqId + '...';
-  document.getElementById('po-dbody').innerHTML = `<div class="ld"><div class="sp"></div><p>Loading request details, quotations and purchase orders...</p></div>`;
-  // Update footer to not show Add Invoice
   const mf = document.querySelector('#modal-po-detail .mf');
-  mf.innerHTML = `<button class="btn" onclick="closeM('po-detail')">Close</button>
-    <button class="btn btn-pri" onclick="closeM('po-detail');openM('add-quotation');document.getElementById('aq-ri').value='${reqId}'">+ Add Quotation</button>
-    <button class="btn" style="background:#F0FDF4;color:var(--green);border-color:#BBF7D0" onclick="closeM('po-detail');openM('create-po');document.getElementById('cp-ri').value='${reqId}'">+ Create PO</button>`;
-
+  mf.innerHTML = '<button class="btn" onclick="closeM(\'po-detail\')">Close</button>'
+    + '<button class="btn btn-pri" onclick="closeM(\'po-detail\');openM(\'add-quotation\');document.getElementById(\'aq-ri\').value=\''+reqId+'\'">+ Add Quotation</button>'
+    + '<button class="btn" style="background:#F0FDF4;color:var(--green);border-color:#BBF7D0" onclick="closeM(\'po-detail\');openM(\'create-po\');document.getElementById(\'cp-ri\').value=\''+reqId+'\'">+ Create PO</button>';
+  document.getElementById('po-dtitle').textContent = 'Loading Request #' + reqId + '...';
+  document.getElementById('po-dbody').innerHTML = '<div class="ld"><div class="sp"></div><p>Loading request details...</p></div>';
   try {
-    // Load request fields
     const req = await gGetOne(LISTS.Requests, reqId);
-    // Load linked quotations and POs
     const [quots, pos] = await Promise.all([
-      gGet(LISTS.Quotations, `fields/RequestItemId eq ${reqId}`),
-      gGet(LISTS.POs, `fields/RequestItemId eq ${reqId}`)
+      gGet(LISTS.Quotations, 'fields/RequestItemId eq ' + reqId),
+      gGet(LISTS.POs, 'fields/RequestItemId eq ' + reqId)
     ]);
+    document.getElementById('po-dtitle').textContent = 'Request #' + reqId + ' — ' + (req.Title || req.RequestTitle || 'Details');
 
-    document.getElementById('po-dtitle').textContent = `Request #${reqId} — ${req.Title||req.RequestTitle||'Details'}`;
-
-    // Status flow for requests
     const reqSteps = ['Draft','Submitted','Quotation Pending','PO Created','PO Approved','Closed'];
-    const reqStepIdx = {'Draft':0,'Submitted':1,'Quotation Pending':2,'PO Created':3,'PO Approved':4,'Closed':5};
-    const reqCur = reqStepIdx[req.RequestStatus] ?? 1;
-    const reqFlowH = reqSteps.map((s,i)=>`<div class="ss ${i<reqCur?'done':i===reqCur?'cur':'nxt'}">${s}</div>${i<reqSteps.length-1?'<div class="sa">&#8250;</div>':''}`).join('');
+    const reqIdx   = {'Draft':0,'Submitted':1,'Quotation Pending':2,'PO Created':3,'PO Approved':4,'Closed':5};
+    const cur = reqIdx[req.RequestStatus] ?? 1;
+    const flowH = reqSteps.map(function(s,i){ return '<div class="ss '+(i<cur?'done':i===cur?'cur':'nxt')+'">'+s+'</div>'+(i<reqSteps.length-1?'<div class="sa">›</div>':''); }).join('');
 
-    document.getElementById('po-dbody').innerHTML = `
-      <div style="margin-bottom:18px">
-        <div style="font-size:9.5px;color:var(--muted);margin-bottom:7px;font-weight:700;text-transform:uppercase;letter-spacing:.8px">REQUEST STATUS FLOW</div>
-        <div class="sf">${reqFlowH}</div>
-      </div>
+    // Build tabs HTML using string concat — no nested template literals
+    function row(label, value) {
+      return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px">'
+        + '<span style="color:var(--muted)">'+label+'</span>'
+        + '<strong style="text-align:right;max-width:60%">'+value+'</strong></div>';
+    }
 
-      <!-- REQUEST SUMMARY CARDS -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">
-        <div class="kpi"><div class="kv">${req.QuantityRequired||'—'}</div><div class="kl">Quantity</div></div>
-        <div class="kpi"><div class="kv">LKR ${fK(req.EstimatedBudget||0)}</div><div class="kl">Est. Budget</div></div>
-        <div class="kpi"><div class="kv">${quots.length}</div><div class="kl">Quotations</div></div>
-        <div class="kpi dk"><div class="kv">${pos.length}</div><div class="kl">Purchase Orders</div></div>
-      </div>
+    const expBadge = req.ExpenditureType
+      ? '<span class="bdg '+(req.ExpenditureType==='Capex'?'bdg-purple':'bdg-submitted')+'">'+req.ExpenditureType+'</span>'
+      : '—';
 
-      <div class="tabs">
-        <button class="tbb on" onclick="swT('req-info',this)">&#128203; Request Details</button>
-        <button class="tbb" onclick="swT('req-quots',this)">&#128172; Quotations (${quots.length})</button>
-        <button class="tbb" onclick="swT('req-pos',this)">&#128196; Purchase Orders (${pos.length})</button>
-      </div>
+    const infoTab = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+      + '<div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Request Information</div>'
+      + row('Title', req.Title||req.RequestTitle||'—')
+      + row('Status', bdg(req.RequestStatus))
+      + row('Priority', bdg(req.Priority))
+      + row('Requested By', req.RequestedBy||'—')
+      + row('Department', req.Department||'—')
+      + row('Required By Date', fD(req.RequiredByDate))
+      + '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Expenditure Type</span>'+expBadge+'</div>'
+      + row('Cost Centre', req.CostCentre||'—')
+      + '</div>'
+      + '<div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Specifications &amp; Budget</div>'
+      + '<div style="padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted);display:block;margin-bottom:4px">Description</span>'+(req.ItemDescription||'—')+'</div>'
+      + row('Quantity', req.QuantityRequired||'—')
+      + '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Budget</span><strong style="color:var(--navy);font-size:15px">LKR '+fmt(req.EstimatedBudget)+'</strong></div>'
+      + '<div style="padding:6px 0;font-size:13px"><span style="color:var(--muted);display:block;margin-bottom:4px">Justification</span>'+(req.Justification||'—')+'</div>'
+      + '<div style="margin-top:14px;display:flex;flex-direction:column;gap:7px">'
+      + '<button class="btn btn-pri btn-sm" onclick="closeM(\'po-detail\');openM(\'add-quotation\');document.getElementById(\'aq-ri\').value=\''+reqId+'\'">+ Add Quotation</button>'
+      + (req.RequestStatus==='Quotation Pending' ? '<button class="btn btn-sm" style="background:#F0FDF4;color:var(--green);border-color:#BBF7D0" onclick="closeM(\'po-detail\');openM(\'create-po\');document.getElementById(\'cp-ri\').value=\''+reqId+'\'">+ Create PO</button>' : '')
+      + '</div>'
+      + '</div>'
+      + '</div>';
 
-      <!-- REQUEST INFO TAB -->
-      <div id="tab-req-info">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-          <div>
-            <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Request Information</div>
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Title</span><strong style="max-width:55%;text-align:right">${req.Title||req.RequestTitle||'—'}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Status</span><span>${bdg(req.RequestStatus)}</span></div>
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Priority</span><span>${bdg(req.Priority)}</span></div>
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Requested By</span><strong>${req.RequestedBy||'—'}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Department</span><strong>${req.Department||'—'}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Required By</span><strong>${fD(req.RequiredByDate)}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Expenditure Type</span><strong>${req.ExpenditureType||'—'}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px"><span style="color:var(--muted)">Cost Centre</span><strong>${req.CostCentre||'—'}</strong></div>
-          </div>
-          <div>
-            <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Specifications & Budget</div>
-            <div style="padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted);display:block;margin-bottom:4px">Description / Specifications</span><span>${req.ItemDescription||req.Description||'—'}</span></div>
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Quantity Required</span><strong>${req.QuantityRequired||'—'}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Estimated Budget</span><strong style="color:var(--navy);font-size:15px">LKR ${fmt(req.EstimatedBudget)}</strong></div>
-            <div style="padding:6px 0;font-size:13px"><span style="color:var(--muted);display:block;margin-bottom:4px">Justification</span><span>${req.Justification||'—'}</span></div>
-            <div style="margin-top:14px;display:flex;flex-direction:column;gap:7px">
-              <button class="btn btn-pri btn-sm" onclick="closeM('po-detail');openM('add-quotation');document.getElementById('aq-ri').value='${reqId}'">+ Add Quotation for this Request</button>
-              ${req.RequestStatus==='Quotation Pending'?`<button class="btn btn-sm" style="background:#F0FDF4;color:var(--green);border-color:#BBF7D0" onclick="closeM('po-detail');openM('create-po');document.getElementById('cp-ri').value='${reqId}'">+ Create Purchase Order</button>`:''}
-            </div>
-          </div>
-        </div>
-      </div>
+    // Quotations tab
+    var quotsHtml = '';
+    if (quots.length === 0) {
+      quotsHtml = emp('&#128172;','No quotations yet','') + '<div style="text-align:center;margin-top:8px"><button class="btn btn-pri" onclick="closeM(\'po-detail\');openM(\'add-quotation\');document.getElementById(\'aq-ri\').value=\''+reqId+'\'">+ Add First Quotation</button></div>';
+    } else {
+      window._currentQuots = quots;
+      window._currentReqId = reqId;
+      quots.sort(function(a,b){return (a.TotalAmount||0)-(b.TotalAmount||0);}).forEach(function(q,i){
+        var isSelected = q.QuotationStatus === 'Selected';
+        var selBtn = isSelected
+          ? '<span class="bdg bdg-approved" style="padding:5px 10px">&#9989; Selected</span>'
+          : '<button class="btn btn-sm btn-grn" data-qid="'+q._id+'" data-rid="'+reqId+'" data-vn="'+encodeURIComponent(q.VendorName||'')+'" data-ve="'+encodeURIComponent(q.VendorEmail||'')+'" data-up="'+(q.UnitPrice||0)+'" data-qty="'+(q.Quantity||1)+'" data-tot="'+(q.TotalAmount||0)+'" onclick="selectQuotFromBtn(this)">&#9989; Select &amp; Create PO</button>';
+        var docLink = (q.DocumentUrl||q.QuotationDoc) ? flink(q.DocumentUrl||q.QuotationDoc,'&#128172; Quotation Document') : '';
+        quotsHtml += '<div class="qc '+(isSelected?'sel':'')+(i===0?' low':'')+'" style="margin-bottom:10px">'
+          + '<div class="qct">'
+          + '<div class="qcv">'+(i===0?'<span style="font-size:18px">&#127945;</span>':'')+'<strong>'+(q.VendorName||'—')+'</strong>'+bdg(q.QuotationStatus)+(i===0?'<span class="bdg bdg-submitted">Lowest Price</span>':'')+'</div>'
+          + '<div style="display:flex;align-items:center;gap:8px"><div class="qcp">LKR '+fmt(q.TotalAmount)+'</div>'+selBtn+'</div>'
+          + '</div>'
+          + '<div class="qm">'
+          + '<div><div class="qml">Unit Price</div><strong>LKR '+fmt(q.UnitPrice)+'</strong></div>'
+          + '<div><div class="qml">Quantity</div><strong>'+(q.Quantity||'—')+'</strong></div>'
+          + '<div><div class="qml">Delivery</div><strong>'+(q.DeliveryDays?q.DeliveryDays+' days':'—')+'</strong></div>'
+          + '<div><div class="qml">Warranty</div><strong>'+(q.WarrantyPeriod||'—')+'</strong></div>'
+          + '</div>'
+          + (q.Specifications?'<div style="margin-top:8px;font-size:11.5px;color:var(--muted);padding:6px 10px;background:#F8FAFC;border-radius:7px;border-left:3px solid #CBD5E1">'+q.Specifications+'</div>':'')
+          + (docLink?'<div style="margin-top:8px">'+docLink+'</div>':'')
+          + '</div>';
+      });
+    }
 
-      <!-- QUOTATIONS TAB -->
-      <div id="tab-req-quots" style="display:none">
-        ${quots.length===0
-          ? `<div>${emp('&#128172;','No quotations yet','')}<div style="text-align:center"><button class="btn btn-pri" onclick="closeM('po-detail');openM('add-quotation');document.getElementById('aq-ri').value='${reqId}'">+ Add First Quotation</button></div></div>`
-          : quots.sort((a,b)=>(a.TotalAmount||0)-(b.TotalAmount||0)).map((q,i)=>`
-            <div class="qc ${i===0?'low':''}" style="margin-bottom:10px">
-              <div class="qct">
-                <div class="qcv">${i===0?'<span style="font-size:18px">&#127945;</span>':''}<strong>${q.VendorName||'—'}</strong>${bdg(q.QuotationStatus)}${i===0?'<span class="bdg bdg-submitted">Lowest Price</span>':''}</div>
-                <div class="qcp">LKR ${fmt(q.TotalAmount)}</div>
-              </div>
-              <div class="qm">
-                <div><div class="qml">Unit Price</div><strong>LKR ${fmt(q.UnitPrice)}</strong></div>
-                <div><div class="qml">Quantity</div><strong>${q.Quantity||'—'}</strong></div>
-                <div><div class="qml">Delivery</div><strong>${q.DeliveryDays?q.DeliveryDays+' days':'—'}</strong></div>
-                <div><div class="qml">Warranty</div><strong>${q.WarrantyPeriod||'—'}</strong></div>
-              </div>
-              ${q.Specifications?`<div style="margin-top:8px;font-size:11.5px;color:var(--muted);padding:6px 10px;background:#F8FAFC;border-radius:7px;border-left:3px solid #CBD5E1">${q.Specifications}</div>`:''}
-              ${(q.DocumentUrl||q.QuotationDoc)?`<div style="margin-top:8px">${flink(q.DocumentUrl||q.QuotationDoc,'&#128172; Download Quotation Document')}</div>`:''}
-            </div>`).join('')}
-      </div>
+    // Purchase Orders tab
+    var posHtml = '';
+    if (pos.length === 0) {
+      posHtml = emp('&#128196;','No purchase orders yet','') + '<div style="text-align:center;margin-top:8px"><button class="btn btn-pri" onclick="closeM(\'po-detail\');openM(\'create-po\');document.getElementById(\'cp-ri\').value=\''+reqId+'\'">+ Create Purchase Order</button></div>';
+    } else {
+      pos.forEach(function(p){
+        var poDoc = (p.PODocumentUrl||p.PODocument) ? '<div style="margin-top:8px">'+flink(p.PODocumentUrl||p.PODocument,'&#128202; View PO Document')+'</div>' : '';
+        posHtml += '<div style="border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;background:white;transition:all var(--tr)" onclick="closeM(\'po-detail\');setTimeout(function(){openPOD(\''+p._id+'\')},200)" onmouseover="this.style.borderColor=\'var(--blue)\';this.style.background=\'#F8FAFC\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.background=\'white\'">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+          + '<strong style="font-size:14px;color:var(--navy);font-family:\'JetBrains Mono\',monospace">'+(p.PONumber||'PO #'+p._id)+'</strong>'
+          + '<div style="display:flex;gap:7px;align-items:center">'+bdg(p.POStatus)+'<span style="font-size:16px;font-weight:800;color:var(--navy)">LKR '+fmt(p.TotalAmount)+'</span></div>'
+          + '</div>'
+          + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px">'
+          + '<div><span style="color:var(--muted)">Vendor</span><br><strong>'+(p.VendorName||'—')+'</strong></div>'
+          + '<div><span style="color:var(--muted)">Delivery</span><br><strong>'+fD(p.ExpectedDelivery)+'</strong></div>'
+          + '<div><span style="color:var(--muted)">Created</span><br><strong>'+fD(p.Created)+'</strong></div>'
+          + '</div>'
+          + poDoc
+          + '<div style="margin-top:8px;font-size:11px;color:var(--muted)">&#128269; Click to open full PO details</div>'
+          + '</div>';
+      });
+    }
 
-      <!-- PURCHASE ORDERS TAB -->
-      <div id="tab-req-pos" style="display:none">
-        ${pos.length===0
-          ? `<div>${emp('&#128196;','No purchase orders yet','')}<div style="text-align:center"><button class="btn btn-pri" onclick="closeM('po-detail');openM('create-po');document.getElementById('cp-ri').value='${reqId}'">+ Create Purchase Order</button></div></div>`
-          : pos.map(p=>`
-            <div style="border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all var(--tr)" onclick="closeM('po-detail');setTimeout(()=>openPOD('${p._id}'),200)" onmouseover="this.style.borderColor='var(--blue)';this.style.background='#F8FAFC'" onmouseout="this.style.borderColor='var(--border)';this.style.background='white'">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-                <strong style="font-size:14px;color:var(--navy);font-family:'JetBrains Mono',monospace">${p.PONumber||'PO #'+p._id}</strong>
-                <div style="display:flex;gap:7px;align-items:center">${bdg(p.POStatus)}<span style="font-size:16px;font-weight:800;color:var(--navy)">LKR ${fmt(p.TotalAmount)}</span></div>
-              </div>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px">
-                <div><span style="color:var(--muted)">Vendor</span><br><strong>${p.VendorName||'—'}</strong></div>
-                <div><span style="color:var(--muted)">Delivery Date</span><br><strong>${fD(p.ExpectedDelivery)}</strong></div>
-                <div><span style="color:var(--muted)">Created</span><br><strong>${fD(p.Created)}</strong></div>
-              </div>
-              ${(p.PODocumentUrl||p.PODocument)?`<div style="margin-top:8px">${flink(p.PODocumentUrl||p.PODocument,'&#128202; View PO Document')}</div>`:''}
-              <div style="margin-top:8px;font-size:11px;color:var(--muted)">&#128269; Click to open full PO details, approvals and invoices</div>
-            </div>`).join('')}
-      </div>
-    `;
+    // Render
+    var html = '<div style="margin-bottom:18px">'
+      + '<div style="font-size:9.5px;color:var(--muted);margin-bottom:7px;font-weight:700;text-transform:uppercase;letter-spacing:.8px">REQUEST STATUS FLOW</div>'
+      + '<div class="sf">'+flowH+'</div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">'
+      + '<div class="kpi"><div class="kv">'+(req.QuantityRequired||'—')+'</div><div class="kl">Quantity</div></div>'
+      + '<div class="kpi"><div class="kv">LKR '+fK(req.EstimatedBudget||0)+'</div><div class="kl">Budget</div></div>'
+      + '<div class="kpi"><div class="kv">'+quots.length+'</div><div class="kl">Quotations</div></div>'
+      + '<div class="kpi dk"><div class="kv">'+pos.length+'</div><div class="kl">Purchase Orders</div></div>'
+      + '</div>'
+      + '<div class="tabs">'
+      + '<button class="tbb on" onclick="swT(\'req-info\',this)">&#128203; Request Details</button>'
+      + '<button class="tbb" onclick="swT(\'req-quots\',this)">&#128172; Quotations ('+quots.length+')</button>'
+      + '<button class="tbb" onclick="swT(\'req-pos\',this)">&#128196; Purchase Orders ('+pos.length+')</button>'
+      + '</div>'
+      + '<div id="tab-req-info">'+infoTab+'</div>'
+      + '<div id="tab-req-quots" style="display:none">'+quotsHtml+'</div>'
+      + '<div id="tab-req-pos" style="display:none">'+posHtml+'</div>';
+
+    document.getElementById('po-dbody').innerHTML = html;
   } catch(e) {
-    document.getElementById('po-dbody').innerHTML = `<div style="color:var(--red);padding:28px;text-align:center"><div style="font-size:36px;margin-bottom:12px">&#10060;</div><strong>Error loading request details</strong><br><span style="font-size:12.5px;color:var(--muted)">${e.message}</span></div>`;
+    document.getElementById('po-dbody').innerHTML = '<div style="color:var(--red);padding:28px;text-align:center"><div style="font-size:36px;margin-bottom:12px">&#10060;</div><strong>Error loading request details</strong><br><span style="font-size:12.5px;color:var(--muted)">'+e.message+'</span></div>';
   }
 }
 
 async function openPOD(poId) {
   openM('po-detail');
-  // Reset footer to PO mode
   const mf = document.querySelector('#modal-po-detail .mf');
-  mf.innerHTML = `<button class="btn" onclick="closeM('po-detail')">Close</button><button class="btn btn-pri" onclick="closeM('po-detail');openM('add-invoice')">+ Add Invoice</button>`;
+  mf.innerHTML = '<button class="btn" onclick="closeM(\'po-detail\')">Close</button>'
+    + '<button class="btn btn-pri" onclick="closeM(\'po-detail\');openM(\'add-invoice\')">+ Add Invoice</button>';
   document.getElementById('po-dtitle').textContent = 'Loading...';
-  document.getElementById('po-dbody').innerHTML = `<div class="ld"><div class="sp"></div><p>Loading PO details, quotations, approvals and invoices...</p></div>`;
+  document.getElementById('po-dbody').innerHTML = '<div class="ld"><div class="sp"></div><p>Loading PO details...</p></div>';
   try {
-    // gGetOne returns SharePoint fields with _id merged in from worker
     const po = await gGetOne(LISTS.POs, poId);
-    if(!po._id) po._id = poId;
-    const [allQ,apprs,invs] = await Promise.all([
-      po.RequestItemId ? gGet(LISTS.Quotations,`fields/RequestItemId eq ${po.RequestItemId}`) : Promise.resolve([]),
-      gGet(LISTS.Approvals, `fields/POItemId eq ${poId}`),
-      gGet(LISTS.Invoices, `fields/POItemId eq ${poId}`)
+    if (!po._id) po._id = poId;
+    const [allQ, apprs, invs] = await Promise.all([
+      po.RequestItemId ? gGet(LISTS.Quotations, 'fields/RequestItemId eq ' + po.RequestItemId) : Promise.resolve([]),
+      gGet(LISTS.Approvals, 'fields/POItemId eq ' + poId),
+      gGet(LISTS.Invoices,  'fields/POItemId eq ' + poId)
     ]);
 
-    document.getElementById('po-dtitle').textContent = `${po.PONumber||'PO #'+poId} — Full Details`;
+    document.getElementById('po-dtitle').textContent = (po.PONumber || 'PO #' + poId) + ' — Full Details';
 
-    const steps=['Request','Quotations','PO Created','Approved','Sent to Vendor','Invoice','Closed'];
-    const sMap={'Draft':2,'Pending Approval':2,'Approved':3,'Sent to Vendor':4,'Completed':6,'Closed':6};
-    const cur=sMap[po.POStatus]||2;
-    const flowH=steps.map((s,i)=>`<div class="ss ${i<cur?'done':i===cur?'cur':'nxt'}">${s}</div>${i<steps.length-1?'<div class="sa">&#8250;</div>':''}`).join('');
+    // Status flow
+    var steps = ['Request','Quotations','PO Created','Approved','Sent to Vendor','Invoice','Closed'];
+    var sMap  = {'Draft':2,'Pending Approval':2,'Approved':3,'Sent to Vendor':4,'Completed':6,'Closed':6};
+    var cur   = sMap[po.POStatus] || 2;
+    var flowH = steps.map(function(s,i){ return '<div class="ss '+(i<cur?'done':i===cur?'cur':'nxt')+'">'+s+'</div>'+(i<steps.length-1?'<div class="sa">›</div>':''); }).join('');
 
-    document.getElementById('po-dbody').innerHTML = `
-      <div style="margin-bottom:20px">
-        <div style="font-size:9.5px;color:var(--muted);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.8px">PROCUREMENT FLOW</div>
-        <div class="sf">${flowH}</div>
-      </div>
-      <div class="kr">
-        <div class="kpi"><div class="kv">LKR ${fmt(po.SubTotal)}</div><div class="kl">Sub Total</div></div>
-        <div class="kpi"><div class="kv">${po.TaxPercent||0}%</div><div class="kl">Tax Rate</div></div>
-        <div class="kpi"><div class="kv">LKR ${fmt(po.TaxAmount)}</div><div class="kl">Tax Amount</div></div>
-        <div class="kpi dk"><div class="kv">LKR ${fmt(po.TotalAmount)}</div><div class="kl">Grand Total</div></div>
-      </div>
-      <div class="tabs">
-        <button class="tbb on" onclick="swT('pod-info',this)">&#128196; PO Details</button>
-        <button class="tbb" onclick="swT('pod-quots',this)">&#128172; Quotations (${allQ.length})</button>
-        <button class="tbb" onclick="swT('pod-apprs',this)">&#9989; Approvals (${apprs.length})</button>
-        <button class="tbb" onclick="swT('pod-invs',this)">&#129534; Invoice (${invs.length})</button>
-      </div>
-
-      <!-- PO DETAILS TAB -->
-      <div id="tab-pod-info">
-
-        <!-- ALL ATTACHMENTS BANNER -->
-        <div style="background:#F0F9FF;border:1.5px solid #BAE6FD;border-radius:10px;padding:13px 16px;margin-bottom:16px">
-          <div style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">&#128206; All Attachments for this PO</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center" id="all-attach-list">
-          </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-          <div>
-            <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Purchase Order</div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">PO Number</span><strong style="color:var(--blue);font-family:'JetBrains Mono',monospace">${po.PONumber||'—'}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Status</span><span>${bdg(po.POStatus)}</span></div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Created</span><strong>${fD(po.Created)}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Approved By</span><strong>${po.ApprovedBy||'—'}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Approval Date</span><strong>${fD(po.ApprovalDate)}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Expected Delivery</span><strong>${fD(po.ExpectedDelivery)}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Remarks</span><strong>${po.Remarks||'—'}</strong></div>
-          </div>
-          <div>
-            <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Vendor</div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Vendor Name</span><strong>${po.VendorName||'—'}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Email</span><strong>${po.VendorEmail||'—'}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Delivery Address</span><strong style="text-align:right;max-width:55%">${po.DeliveryAddress||'—'}</strong></div>
-            <div style="margin-top:14px">
-              <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Quick Actions</div>
-              <div style="display:flex;flex-direction:column;gap:7px" id="pod-quick-actions"></div>
-            </div>
-          </div>
-        </div>
-        <table style="margin-bottom:12px"><thead><tr><th>Item Description</th><th>Qty</th><th>Unit Price (LKR)</th><th>Sub Total (LKR)</th></tr></thead>
-        <tbody><tr><td>${po.ItemDescription||'—'}</td><td style="text-align:center;font-weight:700">${po.Quantity||'—'}</td><td style="font-family:'JetBrains Mono',monospace">LKR ${fmt(po.UnitPrice)}</td><td style="font-family:'JetBrains Mono',monospace;font-weight:700">LKR ${fmt(po.SubTotal)}</td></tr></tbody></table>
-        <div style="text-align:right;padding:13px 16px;background:var(--blue-bg);border-radius:9px;border:1px solid rgba(88,166,255,.2)">
-          <div style="font-size:12px;color:var(--muted)">Sub Total: <strong style="font-family:'JetBrains Mono',monospace">LKR ${fmt(po.SubTotal)}</strong></div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px">Tax (${po.TaxPercent||0}%): <strong style="font-family:'JetBrains Mono',monospace">LKR ${fmt(po.TaxAmount)}</strong></div>
-          <div style="font-size:20px;font-weight:800;color:var(--txt);margin-top:8px;padding-top:8px;border-top:1px solid rgba(88,166,255,.3);font-family:'Sora',sans-serif">TOTAL: LKR ${fmt(po.TotalAmount)}</div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="btn btn-pri" onclick="window.print()">&#128424; Print PO</button>
-          <button class="btn">&#128231; Send to Vendor</button>
-        </div>
-      </div>
-
-      <!-- QUOTATIONS TAB -->
-      <div id="tab-pod-quots" style="display:none">
-        ${allQ.length===0 ? emp('&#128172;','No quotations','No quotations found for this request')
-          : allQ.sort((a,b)=>(a.TotalAmount||0)-(b.TotalAmount||0)).map((q,i)=>`
-              <div class="qc ${q.QuotationStatus==='Selected'?'sel':''} ${i===0?'low':''}">
-                <div class="qct">
-                  <div class="qcv">${i===0?'<span style="font-size:20px">&#127945;</span>':''}<strong>${q.VendorName||'—'}</strong>${bdg(q.QuotationStatus)}${i===0?`<span class="bdg bdg-submitted">Lowest Price</span>`:''}</div>
-                  <div class="qcp">LKR ${fmt(q.TotalAmount)}</div>
-                </div>
-                <div class="qm">
-                  <div><div class="qml">Unit Price</div><strong>LKR ${fmt(q.UnitPrice)}</strong></div>
-                  <div><div class="qml">Quantity</div><strong>${q.Quantity||'—'}</strong></div>
-                  <div><div class="qml">Delivery</div><strong>${q.DeliveryDays?q.DeliveryDays+' days':'—'}</strong></div>
-                  <div><div class="qml">Warranty</div><strong>${q.WarrantyPeriod||'—'}</strong></div>
-                </div>
-                ${q.Specifications?`<div style="margin-top:9px;font-size:11.5px;color:var(--muted);padding:7px 10px;background:#F1F5F9;border-radius:7px;border-left:3px solid var(--border2)">${q.Specifications}</div>`:''}
-                ${(q.DocumentUrl||q.QuotationDoc)?`<div style="margin-top:8px">${flink(q.DocumentUrl||q.QuotationDoc,'Download Quotation Document')}</div>`:''}
-              </div>`).join('')}
-      </div>
-
-      <!-- APPROVALS TAB -->
-      <div id="tab-pod-apprs" style="display:none">
-        ${apprs.length===0
-          ? `<div>${emp('&#9989;','No approvals yet','')}<div style="text-align:center"><button class="btn btn-pri" onclick="closeM('po-detail');openM('approve-po');document.getElementById('ap-pi').value='${poId}'">Record Approval</button></div></div>`
-          : `<ul class="tl">${apprs.map(a=>`
-              <li class="tli"><div class="tld ${a.ApprovalAction==='Approved'?'ok':a.ApprovalAction==='Rejected'?'err':''}"></div>
-              <div><div class="tl-ti">${a.ApprovalAction} by ${a.ApproverName||'—'}</div>
-              <div class="tl-su">${fD(a.ActionDate)} · ${a.ApproverEmail||''}</div>
-              ${a.ApprovalComments?`<div class="tl-q ${(a.ApprovalAction||'').toLowerCase()}">"${a.ApprovalComments}"</div>`:''}
-              ${(a.ApprovalDocUrl||a.ApprovalDoc)?`<div style="margin-top:7px">${flink(a.ApprovalDocUrl||a.ApprovalDoc,'Download Signed Approval Document')}</div>`:''}
-              </div></li>`).join('')}</ul>`}
-      </div>
-
-      <!-- INVOICE TAB -->
-      <div id="tab-pod-invs" style="display:none">
-        ${invs.length===0
-          ? `<div>${emp('&#129534;','No invoice yet','')}<div style="text-align:center"><button class="btn btn-pri" onclick="closeM('po-detail');openM('add-invoice');document.getElementById('iv-pi').value='${poId}'">+ Add Invoice</button></div></div>`
-          : invs.map(i=>`
-              <div style="border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:11px;background:#F8FAFC">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:13px">
-                  <strong style="font-size:16px;font-family:'JetBrains Mono',monospace">${i.InvoiceNumber||'—'}</strong>
-                  <div style="display:flex;gap:6px;align-items:center">
-                    ${bdg(i.PaymentStatus)}
-                    ${i.PaymentStatus!=='Paid'?`<button class="btn btn-sm btn-grn" onclick="markPaid('${i._id}')">&#10003; Mark Paid</button>`:'<span style="color:var(--green);font-weight:700;font-size:12px">&#9989; Paid</span>'}
-                  </div>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px">
-                  <div style="display:flex;flex-direction:column;gap:5px">
-                    <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Vendor</span><strong>${i.VendorName||'—'}</strong></div>
-                    <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Invoice Date</span><strong>${fD(i.InvoiceDate)}</strong></div>
-                    <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Due Date</span><strong>${fD(i.DueDate)}</strong></div>
-                  </div>
-                  <div style="display:flex;flex-direction:column;gap:5px">
-                    <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Invoice Amount</span><strong style="font-family:'JetBrains Mono',monospace">LKR ${fmt(i.InvoiceAmount)}</strong></div>
-                    <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Tax</span><strong style="font-family:'JetBrains Mono',monospace">LKR ${fmt(i.TaxAmount)}</strong></div>
-                  </div>
-                </div>
-                <div style="display:flex;justify-content:space-between;background:var(--blue-bg);padding:11px 14px;border-radius:8px;margin-top:12px;border:1px solid rgba(88,166,255,.2)">
-                  <strong>TOTAL</strong><strong style="font-size:19px;font-family:'Sora',sans-serif">LKR ${fmt(i.TotalAmount)}</strong>
-                </div>
-                ${(i.InvoiceDocUrl||i.InvoiceDoc)?`<div style="margin-top:10px">${flink(i.InvoiceDocUrl||i.InvoiceDoc,'Download Invoice Document')}</div>`:''}
-                ${i.Notes?`<div style="font-size:11.5px;color:var(--muted);margin-top:8px;padding:6px 9px;background:#F1F5F9;border-radius:7px">${i.Notes}</div>`:''}
-              </div>`).join('')}
-      </div>
-    `;
-  // Populate dynamic sections after innerHTML is set
-  setTimeout(() => {
-    // ALL ATTACHMENTS list
-    const attachEl = document.getElementById('all-attach-list');
-    if (attachEl) {
-      const links = [];
-      if(po.PODocumentUrl||po.PODocument) links.push(flink(po.PODocumentUrl||po.PODocument,'&#128202; PO Document'));
-      apprs.forEach(a=>{ if(a.ApprovalDocUrl||a.ApprovalDoc) links.push(flink(a.ApprovalDocUrl||a.ApprovalDoc,'&#128221; Approval Doc')); });
-      invs.forEach(i=>{ if(i.InvoiceDocUrl||i.InvoiceDoc) links.push(flink(i.InvoiceDocUrl||i.InvoiceDoc,'&#129534; Invoice PDF')); });
-      allQ.forEach(q=>{ if(q.DocumentUrl||q.QuotationDoc) links.push(flink(q.DocumentUrl||q.QuotationDoc,`&#128172; Quote (${q.VendorName||'Vendor'})`)); });
-      attachEl.innerHTML = links.length > 0
-        ? links.join('')
-        : '<span style="font-size:12px;color:var(--subtle)">No documents uploaded yet for this PO</span>';
+    // Helper
+    function row(lbl, val) {
+      return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">'+lbl+'</span><strong style="text-align:right;max-width:60%">'+val+'</strong></div>';
     }
+
+    // ALL ATTACHMENTS
+    var attachLinks = [];
+    if (po.PODocumentUrl||po.PODocument) attachLinks.push(flink(po.PODocumentUrl||po.PODocument,'&#128202; PO Document'));
+    apprs.forEach(function(a){ if(a.ApprovalDocUrl||a.ApprovalDoc) attachLinks.push(flink(a.ApprovalDocUrl||a.ApprovalDoc,'&#128221; Approval Doc')); });
+    invs.forEach(function(i){ if(i.InvoiceDocUrl||i.InvoiceDoc) attachLinks.push(flink(i.InvoiceDocUrl||i.InvoiceDoc,'&#129534; Invoice PDF')); });
+    allQ.forEach(function(q){ if(q.DocumentUrl||q.QuotationDoc) attachLinks.push(flink(q.DocumentUrl||q.QuotationDoc,'&#128172; Quote Doc')); });
+    var attachHtml = attachLinks.length > 0
+      ? attachLinks.join('')
+      : '<span style="font-size:12px;color:var(--subtle)">No documents uploaded yet</span>';
+
     // Quick actions
-    const qaEl = document.getElementById('pod-quick-actions');
-    if (qaEl) {
-      const btns = [];
-      if(po.POStatus==='Pending Approval') btns.push(`<button class="btn btn-grn btn-sm" onclick="closeM('po-detail');openM('approve-po');document.getElementById('ap-pi').value='${poId}';previewPO('${poId}')">&#9989; Approve This PO</button>`);
-      if(po.POStatus==='Approved') btns.push(`<button class="btn btn-sm" style="background:#EFF6FF;color:var(--blue);border-color:#BFDBFE" onclick="closeM('po-detail');openM('add-invoice');document.getElementById('iv-pi').value='${poId}'">&#129534; Add Invoice</button>`);
-      btns.push(`<button class="btn btn-sm" onclick="window.print()">&#128424; Print PO</button>`);
-      qaEl.innerHTML = btns.join('');
+    var qaHtml = '';
+    if (po.POStatus === 'Pending Approval') qaHtml += '<button class="btn btn-grn btn-sm" onclick="closeM(\'po-detail\');openM(\'approve-po\');document.getElementById(\'ap-pi\').value=\''+poId+'\';previewPO(\''+poId+'\')">&#9989; Approve This PO</button>';
+    if (po.POStatus === 'Approved') qaHtml += '<button class="btn btn-sm" style="background:#EFF6FF;color:var(--blue);border-color:#BFDBFE" onclick="closeM(\'po-detail\');openM(\'add-invoice\');document.getElementById(\'iv-pi\').value=\''+poId+'\'">&#129534; Add Invoice</button>';
+    qaHtml += '<button class="btn btn-sm" onclick="window.print()">&#128424; Print PO</button>';
+
+    // PO Info tab
+    var poDocHtml = (po.PODocumentUrl||po.PODocument) ? '<div style="margin-top:10px">'+flink(po.PODocumentUrl||po.PODocument,'&#128202; Download PO Sheet')+'</div>' : '<div style="margin-top:10px;font-size:12px;color:var(--subtle)">No PO document uploaded</div>';
+    var infoHtml = '<div style="background:#F0F9FF;border:1.5px solid #BAE6FD;border-radius:10px;padding:13px 16px;margin-bottom:16px">'
+      + '<div style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">&#128206; All Attachments</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">'+attachHtml+'</div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">'
+      + '<div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Purchase Order</div>'
+      + row('PO Number', '<span style="color:var(--blue);font-family:\'JetBrains Mono\',monospace">'+(po.PONumber||'—')+'</span>')
+      + row('Status', bdg(po.POStatus))
+      + row('Created', fD(po.Created))
+      + row('Approved By', po.ApprovedBy||'—')
+      + row('Approval Date', fD(po.ApprovalDate))
+      + row('Expected Delivery', fD(po.ExpectedDelivery))
+      + row('Remarks', po.Remarks||'—')
+      + poDocHtml
+      + '</div>'
+      + '<div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Vendor</div>'
+      + row('Vendor Name', po.VendorName||'—')
+      + row('Email', po.VendorEmail||'—')
+      + row('Delivery Address', po.DeliveryAddress||'—')
+      + '<div style="margin-top:14px"><div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Quick Actions</div>'
+      + '<div style="display:flex;flex-direction:column;gap:7px">'+qaHtml+'</div></div>'
+      + '</div>'
+      + '</div>'
+      + '<table style="margin-bottom:12px"><thead><tr><th>Item Description</th><th>Qty</th><th>Unit Price (LKR)</th><th>Sub Total (LKR)</th></tr></thead>'
+      + '<tbody><tr><td>'+(po.ItemDescription||'—')+'</td><td style="text-align:center;font-weight:700">'+(po.Quantity||'—')+'</td><td style="font-family:\'JetBrains Mono\',monospace">LKR '+fmt(po.UnitPrice)+'</td><td style="font-family:\'JetBrains Mono\',monospace;font-weight:700">LKR '+fmt(po.SubTotal)+'</td></tr></tbody></table>'
+      + '<div style="text-align:right;padding:13px 16px;background:#EFF6FF;border-radius:9px;border:1px solid #BFDBFE;margin-bottom:12px">'
+      + '<div style="font-size:12px;color:var(--muted)">Sub Total: <strong style="font-family:\'JetBrains Mono\',monospace">LKR '+fmt(po.SubTotal)+'</strong></div>'
+      + '<div style="font-size:12px;color:var(--muted);margin-top:2px">Tax ('+(po.TaxPercent||0)+'%): <strong style="font-family:\'JetBrains Mono\',monospace">LKR '+fmt(po.TaxAmount)+'</strong></div>'
+      + '<div style="font-size:20px;font-weight:800;color:var(--navy);margin-top:8px;padding-top:8px;border-top:1px solid #BFDBFE;font-family:\'Sora\',sans-serif">TOTAL: LKR '+fmt(po.TotalAmount)+'</div>'
+      + '</div>';
+
+    // Quotations tab
+    var quotsHtml = '';
+    if (allQ.length === 0) {
+      quotsHtml = emp('&#128172;','No quotations','No quotations found for this request');
+    } else {
+      allQ.sort(function(a,b){return (a.TotalAmount||0)-(b.TotalAmount||0);}).forEach(function(q,i){
+        var isSelected = q.QuotationStatus === 'Selected';
+        var docLink = (q.DocumentUrl||q.QuotationDoc) ? '<div style="margin-top:8px">'+flink(q.DocumentUrl||q.QuotationDoc,'&#128172; Download Quotation Document')+'</div>' : '';
+        var specHtml = q.Specifications ? '<div style="margin-top:9px;font-size:11.5px;color:var(--muted);padding:7px 10px;background:#F1F5F9;border-radius:7px;border-left:3px solid #CBD5E1">'+q.Specifications+'</div>' : '';
+        quotsHtml += '<div class="qc '+(isSelected?'sel':'')+(i===0?' low':'')+'">'
+          + '<div class="qct">'
+          + '<div class="qcv">'+(i===0?'<span style="font-size:20px">&#127945;</span>':'')+'<strong>'+(q.VendorName||'—')+'</strong>'+bdg(q.QuotationStatus)+(i===0?'<span class="bdg bdg-submitted">Lowest Price</span>':'')+'</div>'
+          + '<div class="qcp">LKR '+fmt(q.TotalAmount)+'</div>'
+          + '</div>'
+          + '<div class="qm">'
+          + '<div><div class="qml">Unit Price</div><strong>LKR '+fmt(q.UnitPrice)+'</strong></div>'
+          + '<div><div class="qml">Quantity</div><strong>'+(q.Quantity||'—')+'</strong></div>'
+          + '<div><div class="qml">Delivery</div><strong>'+(q.DeliveryDays?q.DeliveryDays+' days':'—')+'</strong></div>'
+          + '<div><div class="qml">Warranty</div><strong>'+(q.WarrantyPeriod||'—')+'</strong></div>'
+          + '</div>'
+          + specHtml + docLink
+          + '</div>';
+      });
     }
-  }, 50);
+
+    // Approvals tab
+    var apprsHtml = '';
+    if (apprs.length === 0) {
+      apprsHtml = emp('&#9989;','No approvals yet','')
+        + '<div style="text-align:center"><button class="btn btn-pri" onclick="closeM(\'po-detail\');openM(\'approve-po\');document.getElementById(\'ap-pi\').value=\''+poId+'\'">Record Approval</button></div>';
+    } else {
+      apprsHtml = '<ul class="tl">';
+      apprs.forEach(function(a){
+        var dc = a.ApprovalAction==='Approved'?'ok':a.ApprovalAction==='Rejected'?'err':'';
+        var commentHtml = a.ApprovalComments ? '<div class="tl-q '+((a.ApprovalAction||'').toLowerCase())+'">'+a.ApprovalComments+'</div>' : '';
+        var aprDocHtml  = (a.ApprovalDocUrl||a.ApprovalDoc) ? '<div style="margin-top:7px">'+flink(a.ApprovalDocUrl||a.ApprovalDoc,'&#128221; Signed Approval Document')+'</div>' : '';
+        apprsHtml += '<li class="tli"><div class="tld '+dc+'"></div><div>'
+          + '<div class="tl-ti">'+(a.ApprovalAction||'')+ ' by '+(a.ApproverName||'—')+'</div>'
+          + '<div class="tl-su">'+fD(a.ActionDate)+' · '+(a.ApproverEmail||'')+'</div>'
+          + commentHtml + aprDocHtml
+          + '</div></li>';
+      });
+      apprsHtml += '</ul>';
+    }
+
+    // Invoices tab
+    var invsHtml = '';
+    if (invs.length === 0) {
+      invsHtml = emp('&#129534;','No invoice yet','')
+        + '<div style="text-align:center"><button class="btn btn-pri" onclick="closeM(\'po-detail\');openM(\'add-invoice\');document.getElementById(\'iv-pi\').value=\''+poId+'\'">+ Add Invoice</button></div>';
+    } else {
+      invs.forEach(function(inv){
+        var paidBtn = inv.PaymentStatus !== 'Paid'
+          ? '<button class="btn btn-sm btn-grn" onclick="markPaid(\''+inv._id+'\')">&#10003; Mark Paid</button>'
+          : '<span style="color:var(--green);font-weight:700;font-size:12px">&#9989; Paid</span>';
+        var invDocHtml  = (inv.InvoiceDocUrl||inv.InvoiceDoc) ? '<div style="margin-top:10px">'+flink(inv.InvoiceDocUrl||inv.InvoiceDoc,'&#128196; Download Invoice Document')+'</div>' : '';
+        var invNotesHtml = inv.Notes ? '<div style="font-size:11.5px;color:var(--muted);margin-top:8px;padding:6px 9px;background:#F1F5F9;border-radius:7px">'+inv.Notes+'</div>' : '';
+        invsHtml += '<div style="border:1.5px solid var(--border);border-radius:10px;padding:16px;margin-bottom:11px;background:white">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:13px">'
+          + '<strong style="font-size:16px;font-family:\'JetBrains Mono\',monospace">'+(inv.InvoiceNumber||'—')+'</strong>'
+          + '<div style="display:flex;gap:6px;align-items:center">'+bdg(inv.PaymentStatus)+paidBtn+'</div>'
+          + '</div>'
+          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px">'
+          + '<div style="display:flex;flex-direction:column;gap:5px">'
+          + '<div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Vendor</span><strong>'+(inv.VendorName||'—')+'</strong></div>'
+          + '<div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Invoice Date</span><strong>'+fD(inv.InvoiceDate)+'</strong></div>'
+          + '<div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Due Date</span><strong>'+fD(inv.DueDate)+'</strong></div>'
+          + '</div>'
+          + '<div style="display:flex;flex-direction:column;gap:5px">'
+          + '<div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Amount</span><strong style="font-family:\'JetBrains Mono\',monospace">LKR '+fmt(inv.InvoiceAmount)+'</strong></div>'
+          + '<div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Tax</span><strong style="font-family:\'JetBrains Mono\',monospace">LKR '+fmt(inv.TaxAmount)+'</strong></div>'
+          + '</div>'
+          + '</div>'
+          + '<div style="display:flex;justify-content:space-between;background:#EFF6FF;padding:11px 14px;border-radius:8px;margin-top:12px;border:1px solid #BFDBFE">'
+          + '<strong>GRAND TOTAL</strong>'
+          + '<strong style="font-size:19px;font-family:\'Sora\',sans-serif">LKR '+fmt(inv.TotalAmount)+'</strong>'
+          + '</div>'
+          + invDocHtml + invNotesHtml
+          + '</div>';
+      });
+    }
+
+    // KPI row
+    var kpiHtml = '<div class="kr">'
+      + '<div class="kpi"><div class="kv">LKR '+fmt(po.SubTotal)+'</div><div class="kl">Sub Total</div></div>'
+      + '<div class="kpi"><div class="kv">'+(po.TaxPercent||0)+'%</div><div class="kl">Tax Rate</div></div>'
+      + '<div class="kpi"><div class="kv">LKR '+fmt(po.TaxAmount)+'</div><div class="kl">Tax Amount</div></div>'
+      + '<div class="kpi dk"><div class="kv">LKR '+fmt(po.TotalAmount)+'</div><div class="kl">Grand Total</div></div>'
+      + '</div>';
+
+    var html = '<div style="margin-bottom:20px">'
+      + '<div style="font-size:9.5px;color:var(--muted);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.8px">PROCUREMENT FLOW</div>'
+      + '<div class="sf">'+flowH+'</div>'
+      + '</div>'
+      + kpiHtml
+      + '<div class="tabs">'
+      + '<button class="tbb on" onclick="swT(\'pod-info\',this)">&#128196; PO Details</button>'
+      + '<button class="tbb" onclick="swT(\'pod-quots\',this)">&#128172; Quotations ('+allQ.length+')</button>'
+      + '<button class="tbb" onclick="swT(\'pod-apprs\',this)">&#9989; Approvals ('+apprs.length+')</button>'
+      + '<button class="tbb" onclick="swT(\'pod-invs\',this)">&#129534; Invoice ('+invs.length+')</button>'
+      + '</div>'
+      + '<div id="tab-pod-info">'+infoHtml+'</div>'
+      + '<div id="tab-pod-quots" style="display:none">'+quotsHtml+'</div>'
+      + '<div id="tab-pod-apprs" style="display:none">'+apprsHtml+'</div>'
+      + '<div id="tab-pod-invs" style="display:none">'+invsHtml+'</div>';
+
+    document.getElementById('po-dbody').innerHTML = html;
 
   } catch(e) {
-    document.getElementById('po-dbody').innerHTML = `<div style="color:var(--red);padding:28px;text-align:center"><div style="font-size:36px;margin-bottom:12px">&#10060;</div><strong>Error loading details</strong><br><span style="font-size:12.5px;color:var(--muted)">${e.message}</span></div>`;
+    document.getElementById('po-dbody').innerHTML = '<div style="color:var(--red);padding:28px;text-align:center"><div style="font-size:36px;margin-bottom:12px">&#10060;</div><strong>Error loading details</strong><br><span style="font-size:12.5px;color:var(--muted)">'+e.message+'</span></div>';
   }
 }
+
 
 function swT(name, btn) {
   document.querySelectorAll('#po-dbody>div[id^="tab-"]').forEach(p=>p.style.display='none');
@@ -2085,6 +2151,139 @@ if(!API){
   loadDash();
 }
 setInterval(()=>{if(API)loadDash();},5*60*1000);
+
+// ═══ EDIT REQUEST — load data from SharePoint then open modal ═══
+async function editReqById(id) {
+  try {
+    const r = await gGetOne(LISTS.Requests, id);
+    document.getElementById('er-id').value = id;
+    document.getElementById('er-ti').value = r.Title||r.RequestTitle||'';
+    document.getElementById('er-de').value = r.ItemDescription||r.Description||'';
+    document.getElementById('er-by').value = r.RequestedBy||'';
+    document.getElementById('er-qt').value = r.QuantityRequired||1;
+    document.getElementById('er-bu').value = r.EstimatedBudget||0;
+    document.getElementById('er-ju').value = r.Justification||'';
+    document.getElementById('er-dt').value = r.RequiredByDate ? r.RequiredByDate.split('T')[0] : '';
+    document.getElementById('er-cc').value = r.CostCentre||'';
+    // Set select values
+    const selMap = {
+      'er-pr': r.Priority||'High',
+      'er-dp': r.Department||'HO',
+      'er-st': r.RequestStatus||'Submitted',
+      'er-exptype': r.ExpenditureType||''
+    };
+    Object.entries(selMap).forEach(([elId, val]) => {
+      const el = document.getElementById(elId);
+      for(let o of el.options) { if(o.value===val||o.text===val){el.value=o.value;break;} }
+    });
+    openM('edit-request');
+  } catch(e) { toast('Error loading request', e.message, 'err'); }
+}
+
+// Keep old name for compatibility
+function openEditReq(id) { editReqById(id); }
+
+async function saveEditReq() {
+  const id = document.getElementById('er-id').value;
+  const title = document.getElementById('er-ti').value.trim();
+  const by = document.getElementById('er-by').value.trim();
+  if(!title||!by){toast('Validation Error','Title and Requested By are required','warn');return;}
+  const fields = {
+    Title: title, RequestTitle: title,
+    ItemDescription: document.getElementById('er-de').value,
+    RequestedBy: by,
+    Department: document.getElementById('er-dp').value,
+    QuantityRequired: Number(document.getElementById('er-qt').value)||1,
+    EstimatedBudget: Number(document.getElementById('er-bu').value)||0,
+    Priority: document.getElementById('er-pr').value,
+    RequestStatus: document.getElementById('er-st').value,
+    Justification: document.getElementById('er-ju').value
+  };
+  const reqDate = document.getElementById('er-dt').value;
+  if(reqDate) fields.RequiredByDate = reqDate;
+  const expType = document.getElementById('er-exptype').value;
+  const costCtr = document.getElementById('er-cc').value;
+  if(expType) fields.ExpenditureType = expType;
+  if(costCtr) fields.CostCentre = costCtr;
+  try {
+    await gPatch(LISTS.Requests, id, fields);
+    toast('Request Updated','Changes saved successfully','ok');
+    closeM('edit-request');
+    refreshAll();
+  } catch(e) {
+    // Retry without optional fields if column not found
+    if(e.message.includes('not recognized')||e.message.includes('invalid')) {
+      delete fields.ExpenditureType; delete fields.CostCentre;
+      await gPatch(LISTS.Requests, id, fields);
+      toast('Request Updated','Saved (ExpenditureType/CostCentre columns not in SharePoint)','warn');
+      closeM('edit-request'); refreshAll();
+    } else { toast('Error',e.message,'err'); }
+  }
+}
+
+// ═══ DELETE REQUEST ═══
+let _deleteReqId = null;
+async function delReqById(id) {
+  _deleteReqId = id;
+  try {
+    const r = await gGetOne(LISTS.Requests, id);
+    document.getElementById('del-req-info').textContent = 'Request #'+id+': '+(r.Title||r.RequestTitle||'Unknown');
+  } catch(e) {
+    document.getElementById('del-req-info').textContent = 'Request #'+id;
+  }
+  const btn = document.getElementById('del-confirm-btn');
+  btn.textContent = 'Yes, Delete';
+  btn.disabled = false;
+  openM('confirm-delete');
+}
+function openDeleteReq(id, title) { delReqById(id); }
+async function confirmDelete() {
+  if(!_deleteReqId) return;
+  const btn = document.getElementById('del-confirm-btn');
+  btn.textContent = 'Deleting...';
+  btn.disabled = true;
+  try {
+    await api('item/'+LISTS.Requests+'/'+_deleteReqId, 'DELETE');
+    toast('Deleted','Request #'+_deleteReqId+' deleted','ok');
+    closeM('confirm-delete');
+    _deleteReqId = null;
+    refreshAll();
+  } catch(e) {
+    toast('Error',e.message,'err');
+    btn.textContent = '&#128465; Yes, Delete';
+    btn.disabled = false;
+  }
+}
+
+// ═══ SELECT QUOTATION via data attributes (no inline string escaping) ═══
+function selectQuotFromBtn(btn) {
+  const quotId    = btn.dataset.qid;
+  const reqId     = btn.dataset.rid;
+  const vendor    = decodeURIComponent(btn.dataset.vn||'');
+  const email     = decodeURIComponent(btn.dataset.ve||'');
+  const unitPrice = btn.dataset.up;
+  const qty       = btn.dataset.qty;
+  selectQuotation(quotId, reqId, vendor, email, unitPrice, qty);
+}
+
+async function selectQuotation(quotId, reqId, vendor, vendorEmail, unitPrice, qty) {
+  try {
+    await gPatch(LISTS.Quotations, quotId, {QuotationStatus:'Selected'});
+    toast('Quotation Selected','Opening Create PO form with vendor details pre-filled','ok');
+    closeM('po-detail');
+    setTimeout(() => {
+      openM('create-po');
+      document.getElementById('cp-ri').value = reqId;
+      document.getElementById('cp-qi').value = quotId;
+      document.getElementById('cp-vn').value = vendor;
+      document.getElementById('cp-ve').value = vendorEmail;
+      document.getElementById('cp-up').value = unitPrice;
+      document.getElementById('cp-qt').value = qty;
+      cPO();
+    }, 200);
+  } catch(e) { toast('Error',e.message,'err'); }
+}
+
 </script>
 </body>
 </html>
