@@ -421,7 +421,7 @@ select.fc option{background:#FFFFFF;color:var(--txt);}
     </div>
     <div class="card">
       <div class="ch"><div class="ct">&#128276; Requests Requiring Action</div><button class="btn btn-sm" onclick="showV('requests',document.getElementById('nav-requests'))">View All</button></div>
-      <div class="tw"><table><thead><tr><th>ID</th><th>Item</th><th>By</th><th>Dept</th><th>Budget (LKR)</th><th>Priority</th><th>Status</th><th>Action</th></tr></thead>
+      <div class="tw"><table><thead><tr><th>ID</th><th>Item</th><th>By</th><th>Dept</th><th>Type</th><th>Budget (LKR)</th><th>Priority</th><th>Status</th><th>Action</th></tr></thead>
       <tbody id="ds-tbl"><tr><td colspan="8"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
     </div>
   </div>
@@ -433,7 +433,7 @@ select.fc option{background:#FFFFFF;color:var(--txt);}
         <select class="fc" style="width:155px;padding:7px 10px" onchange="fReqs(this.value)"><option value="">All Statuses</option><option>Draft</option><option>Submitted</option><option>Quotation Pending</option><option>PO Created</option><option>PO Approved</option><option>Closed</option></select>
         <button class="btn btn-pri" onclick="addRip(event);openM('new-request')">+ New Request</button>
       </div></div>
-      <div class="tw"><table><thead><tr><th>ID</th><th>Item</th><th>By</th><th>Dept</th><th>Qty</th><th>Budget (LKR)</th><th>Priority</th><th>Status</th><th>Required By</th><th>Actions</th></tr></thead>
+      <div class="tw"><table><thead><tr><th>ID</th><th>Item</th><th>By</th><th>Dept</th><th>Type</th><th>Qty</th><th>Budget (LKR)</th><th>Priority</th><th>Status</th><th>Required By</th><th>Actions</th></tr></thead>
       <tbody id="req-tb"><tr><td colspan="10"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
     </div>
   </div>
@@ -482,20 +482,25 @@ select.fc option{background:#FFFFFF;color:var(--txt);}
 
   <!-- REPORTS -->
   <div class="view" id="view-reports">
-    <div class="srow" style="margin-bottom:13px">
+    <div class="srow" style="margin-bottom:10px">
       <div class="sc"><div class="sc-bar" style="background:linear-gradient(90deg,#1F6FEB,#58A6FF)"></div><div class="sc-lb">Total Requests</div><div class="sc-vl" id="r-treq">—</div></div>
       <div class="sc"><div class="sc-bar" style="background:linear-gradient(90deg,#1A7F37,#3FB950)"></div><div class="sc-lb">Total PO Value</div><div class="sc-vl" id="r-tval">—</div></div>
       <div class="sc"><div class="sc-bar" style="background:linear-gradient(90deg,#9E6A03,#D29922)"></div><div class="sc-lb">Invoices Paid</div><div class="sc-vl" id="r-paid">—</div></div>
       <div class="sc"><div class="sc-bar" style="background:linear-gradient(90deg,#B91C1C,#F85149)"></div><div class="sc-lb">Outstanding Amt</div><div class="sc-vl" id="r-out">—</div></div>
     </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:13px;padding:11px 16px;background:#FFFFFF;border:1px solid var(--border);border-radius:10px;box-shadow:var(--sh1)">
+      <span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Expenditure Split:</span>
+      <div id="r-cx-summary" style="display:flex;gap:8px;flex-wrap:wrap"><span style="color:var(--subtle);font-size:12px">Loading...</span></div>
+    </div>
     <div class="g2" style="margin-bottom:13px">
       <div class="card"><div class="ch"><div class="ct">&#128200; PO Value Trend (Monthly)</div></div><div class="cb"><div class="cw h220"><canvas id="r-trend"></canvas></div></div></div>
       <div class="card"><div class="ch"><div class="ct">&#129382; Invoice Payment Breakdown</div></div><div class="cb"><div class="cw h220"><canvas id="r-donut"></canvas></div></div></div>
     </div>
-    <div class="g3">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:13px;margin-bottom:13px">
       <div class="card"><div class="ch"><div class="ct">&#127970; Spend by Department</div></div><div class="cb" id="r-dept"><div class="ld"><div class="sp"></div></div></div></div>
       <div class="card"><div class="ch"><div class="ct">&#127942; Top Vendors</div></div><div class="cb" id="r-vend"><div class="ld"><div class="sp"></div></div></div></div>
       <div class="card"><div class="ch"><div class="ct">&#128202; Priority Breakdown</div></div><div class="cb"><div class="cw h200"><canvas id="r-pri"></canvas></div></div></div>
+      <div class="card"><div class="ch"><div class="ct">&#128179; Capex vs Opex Split</div></div><div class="cb"><div class="cw h200"><canvas id="r-capex"></canvas></div></div></div>
     </div>
   </div>
 
@@ -619,9 +624,10 @@ git push origin main</div>
   <div class="mb">
     <div class="fr"><div class="fg"><label class="fl">Item Title <span class="req">*</span></label><input class="fc" id="nr-ti" placeholder="e.g. Dell Laptop for IT"></div><div class="fg"><label class="fl">Priority <span class="req">*</span></label><select class="fc" id="nr-pr"><option>Low</option><option>Medium</option><option selected>High</option><option>Urgent</option></select></div></div>
     <div class="fg"><label class="fl">Description / Specifications</label><textarea class="fc" id="nr-de" rows="2" placeholder="Model, specs, requirements..."></textarea></div>
-    <div class="fr"><div class="fg"><label class="fl">Requested By <span class="req">*</span></label><input class="fc" id="nr-by" placeholder="Full name"></div><div class="fg"><label class="fl">Department <span class="req">*</span></label><select class="fc" id="nr-dp"><option>IT</option><option>Finance</option><option>HR</option><option>Operations</option><option>Marketing</option><option>Admin</option></select></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Requested By <span class="req">*</span></label><input class="fc" id="nr-by" placeholder="Full name"></div><div class="fg"><label class="fl">Department <span class="req">*</span></label><select class="fc" id="nr-dp"><option>HO</option><option>RESCIDENT</option><option>KELANIYA</option><option>INDUSTRIAL</option><option>CBR.SUMMER</option><option>OTHER</option></select></div></div>
     <div class="fr"><div class="fg"><label class="fl">Quantity <span class="req">*</span></label><input class="fc" id="nr-qt" type="number" min="1" value="1"></div><div class="fg"><label class="fl">Estimated Budget (LKR)</label><input class="fc" id="nr-bu" type="number" placeholder="0"></div></div>
     <div class="fr"><div class="fg"><label class="fl">Required By Date</label><input class="fc" id="nr-dt" type="date"></div><div class="fg"><label class="fl">Justification</label><input class="fc" id="nr-ju" placeholder="Business reason"></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Expenditure Type <span class="req">*</span></label><select class="fc" id="nr-exptype"><option value="">Select Type</option><option>Capex</option><option>Opex</option></select><div class="fhint">Capex = Capital Expenditure &nbsp;|&nbsp; Opex = Operational Expenditure</div></div><div class="fg"><label class="fl">Cost Centre / Project</label><input class="fc" id="nr-cc" placeholder="e.g. IT-2025-001"></div></div>
   </div>
   <div class="mf"><button class="btn" onclick="closeM('new-request')">Cancel</button><button class="btn btn-pri" onclick="addRip(event);subReq()">Submit Request</button></div>
   </div>
@@ -1153,6 +1159,7 @@ async function loadDash() {
           <td style="color:var(--blue);font-weight:700;font-family:'JetBrains Mono',monospace">#${r._id}</td>
           <td><strong>${r.Title||'—'}</strong><br><span style="color:var(--muted);font-size:11px">${r.ItemDescription||''}</span></td>
           <td>${r.RequestedBy||'—'}</td><td>${r.Department||'—'}</td>
+          <td>${r.ExpenditureType?`<span class="bdg ${r.ExpenditureType==='Capex'?'bdg-purple':'bdg-submitted'}">${r.ExpenditureType}</span>`:'—'}</td>
           <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(r.EstimatedBudget)}</td>
           <td>${bdg(r.Priority)}</td><td>${bdg(r.RequestStatus)}</td>
           <td style="white-space:nowrap">
@@ -1188,6 +1195,7 @@ function renderReqs(items) {
         <td style="color:var(--blue);font-weight:700;font-family:'JetBrains Mono',monospace">#${r._id}</td>
         <td><strong>${r.Title||'—'}</strong><br><span style="color:var(--muted);font-size:11px">${r.ItemDescription||''}</span></td>
         <td>${r.RequestedBy||'—'}</td><td>${r.Department||'—'}</td>
+        <td>${r.ExpenditureType?`<span class="bdg ${r.ExpenditureType==='Capex'?'bdg-purple':'bdg-submitted'}">${r.ExpenditureType}</span>`:'—'}</td>
         <td style="text-align:center;font-weight:700">${r.QuantityRequired||'—'}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(r.EstimatedBudget)}</td>
         <td>${bdg(r.Priority)}</td><td>${bdg(r.RequestStatus)}</td>
@@ -1339,6 +1347,13 @@ async function loadRpts() {
     document.getElementById('r-tval').textContent = 'LKR '+fK(totV);
     document.getElementById('r-paid').textContent = 'LKR '+fK(paidA);
     document.getElementById('r-out').textContent  = 'LKR '+fK(outA);
+    // Capex/Opex summary badges
+    const cxSummary = document.getElementById('r-cx-summary');
+    if(cxSummary){
+      const cx=reqs.filter(r=>r.ExpenditureType==='Capex').reduce((s,r)=>s+(r.EstimatedBudget||0),0);
+      const ox=reqs.filter(r=>r.ExpenditureType==='Opex').reduce((s,r)=>s+(r.EstimatedBudget||0),0);
+      cxSummary.innerHTML=`<span class="bdg bdg-purple" style="font-size:12px;padding:4px 11px">Capex: LKR ${fK(cx)}</span> <span class="bdg bdg-submitted" style="font-size:12px;padding:4px 11px">Opex: LKR ${fK(ox)}</span>`;
+    }
 
     // Trend line
     const mM={};
@@ -1376,6 +1391,18 @@ async function loadRpts() {
     const prC=['#484F58','#58A6FF','#D29922','#F85149'];
     const prD=prL.map(p=>reqs.filter(r=>r.Priority===p).length);
     mkBar('r-pri',prL,prD,prC);
+
+    // Capex vs Opex donut chart
+    const capexCount = reqs.filter(r=>r.ExpenditureType==='Capex').length;
+    const opexCount  = reqs.filter(r=>r.ExpenditureType==='Opex').length;
+    const otherCount = reqs.filter(r=>!r.ExpenditureType||r.ExpenditureType==='').length;
+    const capexVal   = reqs.filter(r=>r.ExpenditureType==='Capex').reduce((s,r)=>s+(r.EstimatedBudget||0),0);
+    const opexVal    = reqs.filter(r=>r.ExpenditureType==='Opex').reduce((s,r)=>s+(r.EstimatedBudget||0),0);
+    const cxL=[],cxD=[],cxC=[];
+    if(capexCount>0){cxL.push('Capex — LKR '+fK(capexVal));cxD.push(capexCount);cxC.push('#7C3AED');}
+    if(opexCount>0){cxL.push('Opex — LKR '+fK(opexVal));cxD.push(opexCount);cxC.push('#2563EB');}
+    if(otherCount>0){cxL.push('Not set');cxD.push(otherCount);cxC.push('#CBD5E1');}
+    mkDonut('r-capex',cxL.length?cxL:['No data'],cxD.length?cxD:[1],cxC.length?cxC:['#E2E8F0']);
 
   } catch(e) { toast('Reports Error',e.message,'err'); }
 }
@@ -1545,7 +1572,7 @@ async function subReq() {
   const title=document.getElementById('nr-ti').value.trim(), by=document.getElementById('nr-by').value.trim();
   if(!title||!by){toast('Validation Error','Title and Requested By are required','warn');return;}
   try {
-    const id = await gPost(LISTS.Requests,{Title:title,RequestTitle:title,ItemDescription:document.getElementById('nr-de').value,RequestedBy:by,Department:document.getElementById('nr-dp').value,QuantityRequired:Number(document.getElementById('nr-qt').value)||1,EstimatedBudget:Number(document.getElementById('nr-bu').value)||0,Priority:document.getElementById('nr-pr').value,RequestStatus:'Submitted',RequiredByDate:document.getElementById('nr-dt').value||null,Justification:document.getElementById('nr-ju').value});
+    const id = await gPost(LISTS.Requests,{Title:title,RequestTitle:title,ItemDescription:document.getElementById('nr-de').value,RequestedBy:by,Department:document.getElementById('nr-dp').value,QuantityRequired:Number(document.getElementById('nr-qt').value)||1,EstimatedBudget:Number(document.getElementById('nr-bu').value)||0,Priority:document.getElementById('nr-pr').value,RequestStatus:'Submitted',RequiredByDate:document.getElementById('nr-dt').value||null,Justification:document.getElementById('nr-ju').value,ExpenditureType:document.getElementById('nr-exptype').value||null,CostCentre:document.getElementById('nr-cc').value||null});
     toast('Request Submitted','Request #'+id+' created.','ok');
     closeM('new-request'); refreshAll();
   } catch(e) { toast('Error',e.message,'err'); }
