@@ -687,26 +687,72 @@ git push origin main</div>
   </div>
 </div>
 
-<!-- APPROVE PO + signed doc upload -->
+<!-- APPROVE PO + PO doc preview + signed doc upload -->
 <div class="mo" id="modal-approve-po">
-  <div class="modal" style="max-width:500px"><div class="mh"><div class="mt">&#9989; Record Approval + Upload Signed Doc</div><button class="mx" onclick="closeM('approve-po')">&#10005;</button></div>
+  <div class="modal" style="max-width:620px"><div class="mh"><div class="mt">&#9989; Review &amp; Approve Purchase Order</div><button class="mx" onclick="closeM('approve-po')">&#10005;</button></div>
   <div class="mb">
-    <div class="fg"><label class="fl">PO Item ID <span class="req">*</span></label><input class="fc" id="ap-pi" type="number" placeholder="Enter PO ID from Purchase Orders table"></div>
-    <div class="fr"><div class="fg"><label class="fl">Approver Name <span class="req">*</span></label><input class="fc" id="ap-nm"></div><div class="fg"><label class="fl">Approver Email</label><input class="fc" id="ap-em" type="email"></div></div>
-    <div class="fg"><label class="fl">Decision <span class="req">*</span></label><select class="fc" id="ap-ac"><option>Approved</option><option>Rejected</option><option>Returned for Revision</option></select></div>
-    <div class="fg"><label class="fl">Comments</label><textarea class="fc" id="ap-co" rows="3" placeholder="Reason, conditions, notes..."></textarea></div>
+
+    <!-- PO Preview section — loaded dynamically -->
+    <div id="ap-po-preview" style="background:#F0F4F8;border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;display:none">
+      <div style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">&#128196; PO Being Approved</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12.5px" id="ap-po-info"></div>
+      <div id="ap-po-doc" style="margin-top:10px"></div>
+    </div>
+
     <div class="fg">
-      <label class="fl">&#128221; Signed Approval Document <span style="color:var(--red);font-size:10px;text-transform:none;letter-spacing:0;font-weight:600">Required for full audit trail</span></label>
+      <label class="fl">PO Item ID <span class="req">*</span></label>
+      <input class="fc" id="ap-pi" type="number" placeholder="Enter PO ID from Purchase Orders table" oninput="previewPO(this.value)">
+      <div class="fhint">Type the PO ID to preview the PO details above before approving</div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Approver Name <span class="req">*</span></label><input class="fc" id="ap-nm"></div>
+      <div class="fg"><label class="fl">Approver Email</label><input class="fc" id="ap-em" type="email"></div>
+    </div>
+    <div class="fg"><label class="fl">Decision <span class="req">*</span></label>
+      <select class="fc" id="ap-ac">
+        <option>Approved</option>
+        <option>Rejected</option>
+        <option>Returned for Revision</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">Comments</label>
+      <textarea class="fc" id="ap-co" rows="3" placeholder="Reason, conditions, notes..."></textarea>
+    </div>
+
+    <!-- Upload BOTH: PO Excel (before approval) + Signed approval doc -->
+    <div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:10px;padding:12px;margin-bottom:13px;font-size:12px;color:#92400E">
+      &#128161; <strong>Two documents needed for complete audit trail:</strong><br>
+      1. The <strong>signed PO Excel/PDF</strong> (if not already uploaded with PO creation)<br>
+      2. The <strong>signed approval authorisation document</strong>
+    </div>
+
+    <div class="fg">
+      <label class="fl">&#128202; PO Excel / Signed PO Document <span style="color:var(--yellow);font-size:10px;text-transform:none;letter-spacing:0;font-weight:600">Upload if not done at PO creation</span></label>
+      <div class="upz" id="ap-po-zone" onclick="document.getElementById('ap-po-fl').click()">
+        <input type="file" id="ap-po-fl" accept=".xlsx,.xls,.pdf,.docx" onchange="hFile(this,'ap-po-fn','ap-po-zone')">
+        <div class="uz-ic">&#128202;</div>
+        <div class="uz-ti">Upload PO Excel Sheet or Signed PO PDF</div>
+        <div class="uz-su">XLSX, XLS, PDF &mdash; the original Purchase Order document</div>
+        <div id="ap-po-fn"></div>
+      </div>
+    </div>
+
+    <div class="fg">
+      <label class="fl">&#128221; Signed Approval Authorisation <span style="color:var(--red);font-size:10px;text-transform:none;letter-spacing:0;font-weight:600">Required</span></label>
       <div class="upz" id="ap-zone" onclick="document.getElementById('ap-fl').click()">
         <input type="file" id="ap-fl" accept=".pdf,.xlsx,.xls,.docx" onchange="hFile(this,'ap-fn','ap-zone')">
         <div class="uz-ic">&#128221;</div>
-        <div class="uz-ti">Upload signed approval document</div>
+        <div class="uz-ti">Upload signed approval authorisation document</div>
         <div class="uz-su">PDF or Excel signed by approving manager &mdash; stored in SharePoint</div>
         <div id="ap-fn"></div>
       </div>
     </div>
+
   </div>
-  <div class="mf"><button class="btn" onclick="closeM('approve-po')">Cancel</button><button class="btn btn-grn" onclick="addRip(event);subApr()">&#9989; Submit Approval</button></div>
+  <div class="mf">
+    <button class="btn" onclick="closeM('approve-po')">Cancel</button>
+    <button class="btn btn-grn" onclick="addRip(event);subApr()">&#9989; Submit Approval</button>
+  </div>
   </div>
 </div>
 
@@ -785,7 +831,12 @@ async function gGet(listId, filter) {
   const d = await api(p);
   return (d.value||[]).map(i => ({_id:i.id, ...i.fields}));
 }
-async function gGetOne(listId, id) { return api(`item/${listId}/${id}`); }
+async function gGetOne(listId, id) {
+  // Worker returns the fields object directly for /api/item/:listId/:itemId
+  const d = await api(`item/${listId}/${id}`);
+  // d is already the fields object from SharePoint
+  return d;
+}
 async function gPost(listId, fields) { const d = await api(`list/${listId}`,'POST',{fields}); return d.id; }
 async function gPatch(listId, id, flds) { return api(`item/${listId}/${id}`,'PATCH',flds); }
 
@@ -974,7 +1025,23 @@ function showV(id, btn) {
 }
 
 // ── Modals ──
-function openM(n)  { document.getElementById('modal-'+n).classList.add('open'); }
+function openM(n) {
+  document.getElementById('modal-'+n).classList.add('open');
+  // Reset approval preview when opening approve modal
+  if(n==='approve-po') {
+    const prev = document.getElementById('ap-po-preview');
+    if(prev) prev.style.display='none';
+    // Reset upload zones
+    ['ap-po-zone','ap-zone'].forEach(id=>{
+      const z=document.getElementById(id);
+      if(z){z.classList.remove('done','drag');}
+    });
+    ['ap-po-fn','ap-fn'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.innerHTML='';
+    });
+  }
+}
 function closeM(n) { document.getElementById('modal-'+n).classList.remove('open'); }
 document.querySelectorAll('.mo').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); }));
 document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.mo.open').forEach(o=>o.classList.remove('open')); });
@@ -1415,7 +1482,9 @@ async function openPOD(poId) {
   document.getElementById('po-dtitle').textContent = 'Loading...';
   document.getElementById('po-dbody').innerHTML = `<div class="ld"><div class="sp"></div><p>Loading details, quotations, approvals and invoices...</p></div>`;
   try {
+    // gGetOne returns SharePoint fields with _id merged in from worker
     const po = await gGetOne(LISTS.POs, poId);
+    if(!po._id) po._id = poId;
     const [allQ,apprs,invs] = await Promise.all([
       po.RequestItemId ? gGet(LISTS.Quotations,`fields/RequestItemId eq ${po.RequestItemId}`) : Promise.resolve([]),
       gGet(LISTS.Approvals, `fields/POItemId eq ${poId}`),
@@ -1447,23 +1516,36 @@ async function openPOD(poId) {
         <button class="tbb" onclick="swT('pod-invs',this)">&#129534; Invoice (${invs.length})</button>
       </div>
 
-      <!-- PO DETAILS -->
+      <!-- PO DETAILS TAB -->
       <div id="tab-pod-info">
+
+        <!-- ALL ATTACHMENTS BANNER -->
+        <div style="background:#F0F9FF;border:1.5px solid #BAE6FD;border-radius:10px;padding:13px 16px;margin-bottom:16px">
+          <div style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">&#128206; All Attachments for this PO</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center" id="all-attach-list">
+          </div>
+        </div>
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
           <div>
-            <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid var(--blue-bg);margin-bottom:9px">Purchase Order</div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px"><span style="color:var(--muted)">PO Number</span><strong style="color:var(--blue);font-family:'JetBrains Mono',monospace">${po.PONumber||'—'}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px"><span style="color:var(--muted)">Status</span><span>${bdg(po.POStatus)}</span></div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px"><span style="color:var(--muted)">Created</span><strong>${fD(po.Created)}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px"><span style="color:var(--muted)">Approved By</span><strong>${po.ApprovedBy||'—'}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px"><span style="color:var(--muted)">Expected Delivery</span><strong>${fD(po.ExpectedDelivery)}</strong></div>
-            ${(po.PODocumentUrl||po.PODocument)?`<div style="margin-top:9px">${flink(po.PODocumentUrl||po.PODocument,'Download PO Sheet')}</div>`:''}
+            <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Purchase Order</div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">PO Number</span><strong style="color:var(--blue);font-family:'JetBrains Mono',monospace">${po.PONumber||'—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Status</span><span>${bdg(po.POStatus)}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Created</span><strong>${fD(po.Created)}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Approved By</span><strong>${po.ApprovedBy||'—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Approval Date</span><strong>${fD(po.ApprovalDate)}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Expected Delivery</span><strong>${fD(po.ExpectedDelivery)}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Remarks</span><strong>${po.Remarks||'—'}</strong></div>
           </div>
           <div>
-            <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid var(--blue-bg);margin-bottom:9px">Vendor</div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px"><span style="color:var(--muted)">Vendor</span><strong>${po.VendorName||'—'}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px"><span style="color:var(--muted)">Email</span><strong>${po.VendorEmail||'—'}</strong></div>
-            <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px"><span style="color:var(--muted)">Delivery Address</span><strong style="text-align:right;max-width:55%">${po.DeliveryAddress||'—'}</strong></div>
+            <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Vendor</div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Vendor Name</span><strong>${po.VendorName||'—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Email</span><strong>${po.VendorEmail||'—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Delivery Address</span><strong style="text-align:right;max-width:55%">${po.DeliveryAddress||'—'}</strong></div>
+            <div style="margin-top:14px">
+              <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Quick Actions</div>
+              <div style="display:flex;flex-direction:column;gap:7px" id="pod-quick-actions"></div>
+            </div>
           </div>
         </div>
         <table style="margin-bottom:12px"><thead><tr><th>Item Description</th><th>Qty</th><th>Unit Price (LKR)</th><th>Sub Total (LKR)</th></tr></thead>
@@ -1544,6 +1626,31 @@ async function openPOD(poId) {
               </div>`).join('')}
       </div>
     `;
+  // Populate dynamic sections after innerHTML is set
+  setTimeout(() => {
+    // ALL ATTACHMENTS list
+    const attachEl = document.getElementById('all-attach-list');
+    if (attachEl) {
+      const links = [];
+      if(po.PODocumentUrl||po.PODocument) links.push(flink(po.PODocumentUrl||po.PODocument,'&#128202; PO Document'));
+      apprs.forEach(a=>{ if(a.ApprovalDocUrl||a.ApprovalDoc) links.push(flink(a.ApprovalDocUrl||a.ApprovalDoc,'&#128221; Approval Doc')); });
+      invs.forEach(i=>{ if(i.InvoiceDocUrl||i.InvoiceDoc) links.push(flink(i.InvoiceDocUrl||i.InvoiceDoc,'&#129534; Invoice PDF')); });
+      allQ.forEach(q=>{ if(q.DocumentUrl||q.QuotationDoc) links.push(flink(q.DocumentUrl||q.QuotationDoc,`&#128172; Quote (${q.VendorName||'Vendor'})`)); });
+      attachEl.innerHTML = links.length > 0
+        ? links.join('')
+        : '<span style="font-size:12px;color:var(--subtle)">No documents uploaded yet for this PO</span>';
+    }
+    // Quick actions
+    const qaEl = document.getElementById('pod-quick-actions');
+    if (qaEl) {
+      const btns = [];
+      if(po.POStatus==='Pending Approval') btns.push(`<button class="btn btn-grn btn-sm" onclick="closeM('po-detail');openM('approve-po');document.getElementById('ap-pi').value='${poId}';previewPO('${poId}')">&#9989; Approve This PO</button>`);
+      if(po.POStatus==='Approved') btns.push(`<button class="btn btn-sm" style="background:#EFF6FF;color:var(--blue);border-color:#BFDBFE" onclick="closeM('po-detail');openM('add-invoice');document.getElementById('iv-pi').value='${poId}'">&#129534; Add Invoice</button>`);
+      btns.push(`<button class="btn btn-sm" onclick="window.print()">&#128424; Print PO</button>`);
+      qaEl.innerHTML = btns.join('');
+    }
+  }, 50);
+
   } catch(e) {
     document.getElementById('po-dbody').innerHTML = `<div style="color:var(--red);padding:28px;text-align:center"><div style="font-size:36px;margin-bottom:12px">&#10060;</div><strong>Error loading details</strong><br><span style="font-size:12.5px;color:var(--muted)">${e.message}</span></div>`;
   }
@@ -1572,7 +1679,37 @@ async function subReq() {
   const title=document.getElementById('nr-ti').value.trim(), by=document.getElementById('nr-by').value.trim();
   if(!title||!by){toast('Validation Error','Title and Requested By are required','warn');return;}
   try {
-    const id = await gPost(LISTS.Requests,{Title:title,RequestTitle:title,ItemDescription:document.getElementById('nr-de').value,RequestedBy:by,Department:document.getElementById('nr-dp').value,QuantityRequired:Number(document.getElementById('nr-qt').value)||1,EstimatedBudget:Number(document.getElementById('nr-bu').value)||0,Priority:document.getElementById('nr-pr').value,RequestStatus:'Submitted',RequiredByDate:document.getElementById('nr-dt').value||null,Justification:document.getElementById('nr-ju').value,ExpenditureType:document.getElementById('nr-exptype').value||null,CostCentre:document.getElementById('nr-cc').value||null});
+    // Build fields — only include ExpenditureType/CostCentre if columns exist in SharePoint
+    const reqFields = {
+      Title:title, RequestTitle:title,
+      ItemDescription:document.getElementById('nr-de').value,
+      RequestedBy:by,
+      Department:document.getElementById('nr-dp').value,
+      QuantityRequired:Number(document.getElementById('nr-qt').value)||1,
+      EstimatedBudget:Number(document.getElementById('nr-bu').value)||0,
+      Priority:document.getElementById('nr-pr').value,
+      RequestStatus:'Submitted',
+      RequiredByDate:document.getElementById('nr-dt').value||null,
+      Justification:document.getElementById('nr-ju').value
+    };
+    // Add optional columns — safe: only if user filled them
+    const expType = document.getElementById('nr-exptype').value;
+    const costCtr = document.getElementById('nr-cc').value;
+    if(expType) reqFields.ExpenditureType = expType;
+    if(costCtr) reqFields.CostCentre = costCtr;
+
+    let id;
+    try {
+      id = await gPost(LISTS.Requests, reqFields);
+    } catch(e) {
+      // If ExpenditureType/CostCentre columns don't exist, retry without them
+      if(e.message.includes('not recognized') || e.message.includes('invalid')) {
+        delete reqFields.ExpenditureType;
+        delete reqFields.CostCentre;
+        id = await gPost(LISTS.Requests, reqFields);
+        toast('Note','ExpenditureType/CostCentre columns not found in SharePoint — saved without them. Add columns to enable.','warn');
+      } else { throw e; }
+    }
     toast('Request Submitted','Request #'+id+' created.','ok');
     closeM('new-request'); refreshAll();
   } catch(e) { toast('Error',e.message,'err'); }
@@ -1613,9 +1750,55 @@ async function subPO() {
   } catch(e) { toast('Error',e.message,'err'); }
 }
 
+// ── Preview PO details inside Approve modal ──
+let _previewTimer = null;
+function previewPO(poId) {
+  clearTimeout(_previewTimer);
+  if (!poId || poId.length < 1) { document.getElementById('ap-po-preview').style.display='none'; return; }
+  _previewTimer = setTimeout(async () => {
+    try {
+      const po = await gGetOne(LISTS.POs, poId);
+      const preview = document.getElementById('ap-po-preview');
+      const info = document.getElementById('ap-po-info');
+      const docEl = document.getElementById('ap-po-doc');
+      info.innerHTML = `
+        <div><span style="color:var(--muted);font-size:11px">PO Number</span><br><strong>${po.PONumber||'—'}</strong></div>
+        <div><span style="color:var(--muted);font-size:11px">Vendor</span><br><strong>${po.VendorName||'—'}</strong></div>
+        <div><span style="color:var(--muted);font-size:11px">Item</span><br><strong>${po.ItemDescription||'—'}</strong></div>
+        <div><span style="color:var(--muted);font-size:11px">Total Amount</span><br><strong style="color:var(--navy);font-size:15px">LKR ${fmt(po.TotalAmount)}</strong></div>
+        <div><span style="color:var(--muted);font-size:11px">Status</span><br>${bdg(po.POStatus)}</div>
+        <div><span style="color:var(--muted);font-size:11px">Expected Delivery</span><br><strong>${fD(po.ExpectedDelivery)}</strong></div>
+      `;
+      // Show existing PO document if already uploaded
+      const existingDoc = po.PODocumentUrl || po.PODocument;
+      docEl.innerHTML = existingDoc
+        ? `<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--green)">&#9989; PO document already uploaded: ${flink(existingDoc,'View PO Document')}</div>`
+        : `<div style="font-size:12px;color:var(--yellow)">&#9888; No PO document uploaded yet — please upload below</div>`;
+      preview.style.display = 'block';
+      // Auto-fill vendor name if approver field is empty
+      if (!document.getElementById('ap-nm').value) {
+        // keep empty — don't auto-fill approver
+      }
+    } catch(e) {
+      document.getElementById('ap-po-preview').style.display = 'none';
+    }
+  }, 600);
+}
+
 async function subApr() {
   const poId=document.getElementById('ap-pi').value,name=document.getElementById('ap-nm').value.trim(),action=document.getElementById('ap-ac').value;
   if(!poId||!name){toast('Validation Error','PO ID and Approver Name required','warn');return;}
+
+  // Upload PO document first (if provided — for cases where not uploaded at PO creation)
+  let poDocUrl=null;
+  const fiPO=document.getElementById('ap-po-fl');
+  if(fiPO && fiPO.files[0]){
+    toast('Uploading','Uploading PO document...','warn');
+    poDocUrl=await uploadFile(fiPO.files[0],DOC_LIB+'/PurchaseOrders');
+    if(poDocUrl){ await gPatch(LISTS.POs,poId,{PODocumentUrl:poDocUrl,PODocument:poDocUrl}); }
+  }
+
+  // Upload signed approval document
   let docUrl=null;
   const fi=document.getElementById('ap-fl');
   if(fi.files[0]){toast('Uploading','Uploading approval document...','warn');docUrl=await uploadFile(fi.files[0],DOC_LIB+'/Approvals');}
