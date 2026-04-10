@@ -421,7 +421,17 @@ select.fc option{background:#FFFFFF;color:var(--txt);}
     </div>
     <div class="card">
       <div class="ch"><div class="ct">&#128276; Requests Requiring Action</div><button class="btn btn-sm" onclick="showV('requests',document.getElementById('nav-requests'))">View All</button></div>
-      <div class="tw"><table><thead><tr><th>ID</th><th>Item</th><th>By</th><th>Dept</th><th>Type</th><th>Budget (LKR)</th><th>Priority</th><th>Status</th><th>Action</th></tr></thead>
+      <div class="tw"><table style="min-width:800px"><thead><tr>
+  <th style="width:45px">ID</th>
+  <th>Item Description</th>
+  <th style="width:120px">Requested By</th>
+  <th style="width:90px">Department</th>
+  <th style="width:70px">Type</th>
+  <th style="width:120px">Budget (LKR)</th>
+  <th style="width:80px">Priority</th>
+  <th style="width:120px">Status</th>
+  <th style="width:140px">Action</th>
+</tr></thead>
       <tbody id="ds-tbl"><tr><td colspan="8"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
     </div>
   </div>
@@ -433,7 +443,19 @@ select.fc option{background:#FFFFFF;color:var(--txt);}
         <select class="fc" style="width:155px;padding:7px 10px" onchange="fReqs(this.value)"><option value="">All Statuses</option><option>Draft</option><option>Submitted</option><option>Quotation Pending</option><option>PO Created</option><option>PO Approved</option><option>Closed</option></select>
         <button class="btn btn-pri" onclick="addRip(event);openM('new-request')">+ New Request</button>
       </div></div>
-      <div class="tw"><table><thead><tr><th>ID</th><th>Item</th><th>By</th><th>Dept</th><th>Type</th><th>Qty</th><th>Budget (LKR)</th><th>Priority</th><th>Status</th><th>Required By</th><th>Actions</th></tr></thead>
+      <div class="tw"><table style="min-width:900px"><thead><tr>
+  <th style="width:45px">ID</th>
+  <th>Item Description</th>
+  <th style="width:110px">Requested By</th>
+  <th style="width:90px">Department</th>
+  <th style="width:70px">Type</th>
+  <th style="width:45px">Qty</th>
+  <th style="width:120px">Budget (LKR)</th>
+  <th style="width:80px">Priority</th>
+  <th style="width:120px">Status</th>
+  <th style="width:110px">Required By Date</th>
+  <th style="width:150px">Actions</th>
+</tr></thead>
       <tbody id="req-tb"><tr><td colspan="10"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
     </div>
   </div>
@@ -442,7 +464,19 @@ select.fc option{background:#FFFFFF;color:var(--txt);}
   <div class="view" id="view-quotations">
     <div class="card"><div class="ch"><div class="ct">&#128172; Quotations</div>
       <button class="btn btn-pri" onclick="addRip(event);openM('add-quotation')">+ Add Quotation</button></div>
-      <div class="tw"><table><thead><tr><th>ID</th><th>Req ID</th><th>Vendor</th><th>Unit Price (LKR)</th><th>Qty</th><th>Total (LKR)</th><th>Delivery</th><th>Warranty</th><th>Valid Until</th><th>Document</th><th>Status</th></tr></thead>
+      <div class="tw"><table style="min-width:950px"><thead><tr>
+  <th style="width:45px">ID</th>
+  <th style="width:70px">Req ID</th>
+  <th style="width:150px">Vendor</th>
+  <th style="width:120px">Unit Price (LKR)</th>
+  <th style="width:50px">Qty</th>
+  <th style="width:120px">Total (LKR)</th>
+  <th style="width:90px">Delivery Days</th>
+  <th style="width:90px">Warranty</th>
+  <th style="width:100px">Valid Until</th>
+  <th style="width:120px">Document</th>
+  <th style="width:100px">Status</th>
+</tr></thead>
       <tbody id="qut-tb"><tr><td colspan="11"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
     </div>
   </div>
@@ -453,7 +487,17 @@ select.fc option{background:#FFFFFF;color:var(--txt);}
     <div class="card"><div class="ch"><div class="ct">&#128196; Purchase Orders</div>
       <select class="fc" style="width:155px;padding:7px 10px" onchange="fPOs(this.value)"><option value="">All Statuses</option><option>Pending Approval</option><option>Approved</option><option>Rejected</option><option>Sent to Vendor</option><option>Completed</option></select>
     </div>
-    <div class="tw"><table><thead><tr><th>ID</th><th>PO Number</th><th>Vendor</th><th>Item</th><th>Total (LKR)</th><th>Delivery</th><th>PO Document</th><th>Status</th><th>Actions</th></tr></thead>
+    <div class="tw"><table style="min-width:900px"><thead><tr>
+  <th style="width:45px">ID</th>
+  <th style="width:110px">PO Number</th>
+  <th style="width:140px">Vendor</th>
+  <th>Item Description</th>
+  <th style="width:130px">Total (LKR)</th>
+  <th style="width:100px">Delivery Date</th>
+  <th style="width:120px">PO Document</th>
+  <th style="width:120px">Status</th>
+  <th style="width:190px">Actions</th>
+</tr></thead>
     <tbody id="po-tb"><tr><td colspan="9"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
     </div>
   </div>
@@ -462,7 +506,15 @@ select.fc option{background:#FFFFFF;color:var(--txt);}
   <div class="view" id="view-approvals">
     <div class="card"><div class="ch"><div class="ct">&#9989; PO Approval History</div>
       <button class="btn btn-pri" onclick="addRip(event);openM('approve-po')">+ Record Approval</button></div>
-      <div class="tw"><table><thead><tr><th>ID</th><th>PO ID</th><th>Approver</th><th>Action</th><th>Date</th><th>Comments</th><th>Signed Document</th></tr></thead>
+      <div class="tw"><table style="min-width:800px"><thead><tr>
+  <th style="width:45px">ID</th>
+  <th style="width:70px">PO ID</th>
+  <th style="width:160px">Approver Name / Email</th>
+  <th style="width:120px">Decision</th>
+  <th style="width:110px">Date</th>
+  <th>Comments</th>
+  <th style="width:140px">Signed Document</th>
+</tr></thead>
       <tbody id="apr-tb"><tr><td colspan="7"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
     </div>
   </div>
@@ -475,7 +527,20 @@ select.fc option{background:#FFFFFF;color:var(--txt);}
         <select class="fc" style="width:140px;padding:7px 10px" onchange="fInvs(this.value)"><option value="">All</option><option>Pending</option><option>Paid</option><option>Overdue</option><option>Partial</option></select>
         <button class="btn btn-pri" onclick="addRip(event);openM('add-invoice')">+ Add Invoice</button>
       </div></div>
-      <div class="tw"><table><thead><tr><th>ID</th><th>Invoice #</th><th>PO ID</th><th>Vendor</th><th>Date</th><th>Due Date</th><th>Amount</th><th>Tax</th><th>Total (LKR)</th><th>Invoice Doc</th><th>Status</th><th>Action</th></tr></thead>
+      <div class="tw"><table style="min-width:1100px"><thead><tr>
+  <th style="width:45px">ID</th>
+  <th style="width:130px">Invoice #</th>
+  <th style="width:65px">PO ID</th>
+  <th style="width:130px">Vendor</th>
+  <th style="width:100px">Invoice Date</th>
+  <th style="width:100px">Due Date</th>
+  <th style="width:120px">Amount (LKR)</th>
+  <th style="width:100px">Tax (LKR)</th>
+  <th style="width:130px">Total (LKR)</th>
+  <th style="width:120px">Invoice Doc</th>
+  <th style="width:90px">Status</th>
+  <th style="width:90px">Action</th>
+</tr></thead>
       <tbody id="inv-tb"><tr><td colspan="12"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
     </div>
   </div>
@@ -926,7 +991,19 @@ function bdg(v) {
   return `<span class="bdg ${c}">${d}${v}</span>`;
 }
 function fmt(n) { return n!=null&&n!=='' ? Number(n).toLocaleString('en-US') : '—'; }
-function fD(d)  { return d ? new Date(d).toLocaleDateString('en-GB') : '—'; }
+function fD(d) {
+  if (!d) return '—';
+  try {
+    // SharePoint date-only strings like "2026-04-09" must be parsed as local date
+    // to avoid UTC midnight shifting the day back by one in +ve timezone offsets
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+      const [y, m, day] = d.split('-').map(Number);
+      return new Date(y, m - 1, day).toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'numeric'});
+    }
+    // Full ISO datetime — use as-is but format nicely
+    return new Date(d).toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'numeric'});
+  } catch(e) { return d; }
+}
 function fK(n)  { if(!n) return '0'; const v=Number(n); return v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':String(v); }
 function emp(ic,ti,su) { return `<div class="emp"><div class="emp-ic">${ic}</div><div class="emp-ti">${ti}</div><div class="emp-su">${su}</div></div>`; }
 function flink(url, lbl) {
@@ -1230,7 +1307,7 @@ async function loadDash() {
           <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(r.EstimatedBudget)}</td>
           <td>${bdg(r.Priority)}</td><td>${bdg(r.RequestStatus)}</td>
           <td style="white-space:nowrap">
-            <button class="btn btn-sm" onclick="openPOD('${r._id}')">View</button>
+            <button class="btn btn-sm" onclick="openReqDetail('${r._id}')">&#128269; View</button>
             <button class="btn btn-sm btn-pri" style="margin-left:3px" onclick="openM('add-quotation');document.getElementById('aq-ri').value='${r._id}'">+Quote</button>
           </td>
         </tr>`).join('');
@@ -1248,16 +1325,16 @@ let _reqs=[], _pos=[], _invs=[];
 
 async function loadReqs() {
   const tb = document.getElementById('req-tb');
-  tb.innerHTML = `<tr><td colspan="10"><div class="ld"><div class="sp"></div><p>Loading...</p></div></td></tr>`;
+  tb.innerHTML = `<tr><td colspan="11"><div class="ld"><div class="sp"></div><p>Loading...</p></div></td></tr>`;
   try {
     _reqs = await gGet(LISTS.Requests);
     renderReqs(_reqs);
-  } catch(e) { tb.innerHTML=`<tr><td colspan="10" style="color:var(--red);padding:14px">&#10060; ${e.message}</td></tr>`; }
+  } catch(e) { tb.innerHTML=`<tr><td colspan="11" style="color:var(--red);padding:14px">&#10060; ${e.message}</td></tr>`; }
 }
 function renderReqs(items) {
   const tb = document.getElementById('req-tb');
   tb.innerHTML = items.length===0
-    ? `<tr><td colspan="10">${emp('&#128203;','No requests','Click + New Request to get started')}</td></tr>`
+    ? `<tr><td colspan="11">${emp('&#128203;','No requests','Click + New Request to get started')}</td></tr>`
     : items.map((r,i)=>`<tr class="ri" style="animation-delay:${i*.04}s">
         <td style="color:var(--blue);font-weight:700;font-family:'JetBrains Mono',monospace">#${r._id}</td>
         <td><strong>${r.Title||'—'}</strong><br><span style="color:var(--muted);font-size:11px">${r.ItemDescription||''}</span></td>
@@ -1268,9 +1345,9 @@ function renderReqs(items) {
         <td>${bdg(r.Priority)}</td><td>${bdg(r.RequestStatus)}</td>
         <td style="font-size:12px">${fD(r.RequiredByDate)}</td>
         <td style="white-space:nowrap">
-          <button class="btn btn-sm" onclick="openPOD('${r._id}')">View</button>
+          <button class="btn btn-sm" onclick="openReqDetail('${r._id}')">&#128269; View</button>
           <button class="btn btn-sm btn-pri" style="margin-left:3px" onclick="openM('add-quotation');document.getElementById('aq-ri').value='${r._id}'">+Quote</button>
-          <button class="btn btn-sm" style="margin-left:3px" onclick="openM('create-po');document.getElementById('cp-ri').value='${r._id}'">+PO</button>
+          <button class="btn btn-sm" style="margin-left:3px;background:#F0FDF4;color:var(--green);border-color:#BBF7D0" onclick="openM('create-po');document.getElementById('cp-ri').value='${r._id}'">+PO</button>
         </td>
       </tr>`).join('');
 }
@@ -1477,10 +1554,138 @@ async function loadRpts() {
 // ═══════════════════════════════════════════════════
 // PO FULL DETAIL MODAL
 // ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// REQUEST DETAIL MODAL — opens when View is clicked in Requests table
+// ═══════════════════════════════════════════════
+async function openReqDetail(reqId) {
+  // Reuse po-detail modal with different content
+  openM('po-detail');
+  document.getElementById('po-dtitle').textContent = 'Loading Request #' + reqId + '...';
+  document.getElementById('po-dbody').innerHTML = `<div class="ld"><div class="sp"></div><p>Loading request details, quotations and purchase orders...</p></div>`;
+  // Update footer to not show Add Invoice
+  const mf = document.querySelector('#modal-po-detail .mf');
+  mf.innerHTML = `<button class="btn" onclick="closeM('po-detail')">Close</button>
+    <button class="btn btn-pri" onclick="closeM('po-detail');openM('add-quotation');document.getElementById('aq-ri').value='${reqId}'">+ Add Quotation</button>
+    <button class="btn" style="background:#F0FDF4;color:var(--green);border-color:#BBF7D0" onclick="closeM('po-detail');openM('create-po');document.getElementById('cp-ri').value='${reqId}'">+ Create PO</button>`;
+
+  try {
+    // Load request fields
+    const req = await gGetOne(LISTS.Requests, reqId);
+    // Load linked quotations and POs
+    const [quots, pos] = await Promise.all([
+      gGet(LISTS.Quotations, `fields/RequestItemId eq ${reqId}`),
+      gGet(LISTS.POs, `fields/RequestItemId eq ${reqId}`)
+    ]);
+
+    document.getElementById('po-dtitle').textContent = `Request #${reqId} — ${req.Title||req.RequestTitle||'Details'}`;
+
+    // Status flow for requests
+    const reqSteps = ['Draft','Submitted','Quotation Pending','PO Created','PO Approved','Closed'];
+    const reqStepIdx = {'Draft':0,'Submitted':1,'Quotation Pending':2,'PO Created':3,'PO Approved':4,'Closed':5};
+    const reqCur = reqStepIdx[req.RequestStatus] ?? 1;
+    const reqFlowH = reqSteps.map((s,i)=>`<div class="ss ${i<reqCur?'done':i===reqCur?'cur':'nxt'}">${s}</div>${i<reqSteps.length-1?'<div class="sa">&#8250;</div>':''}`).join('');
+
+    document.getElementById('po-dbody').innerHTML = `
+      <div style="margin-bottom:18px">
+        <div style="font-size:9.5px;color:var(--muted);margin-bottom:7px;font-weight:700;text-transform:uppercase;letter-spacing:.8px">REQUEST STATUS FLOW</div>
+        <div class="sf">${reqFlowH}</div>
+      </div>
+
+      <!-- REQUEST SUMMARY CARDS -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">
+        <div class="kpi"><div class="kv">${req.QuantityRequired||'—'}</div><div class="kl">Quantity</div></div>
+        <div class="kpi"><div class="kv">LKR ${fK(req.EstimatedBudget||0)}</div><div class="kl">Est. Budget</div></div>
+        <div class="kpi"><div class="kv">${quots.length}</div><div class="kl">Quotations</div></div>
+        <div class="kpi dk"><div class="kv">${pos.length}</div><div class="kl">Purchase Orders</div></div>
+      </div>
+
+      <div class="tabs">
+        <button class="tbb on" onclick="swT('req-info',this)">&#128203; Request Details</button>
+        <button class="tbb" onclick="swT('req-quots',this)">&#128172; Quotations (${quots.length})</button>
+        <button class="tbb" onclick="swT('req-pos',this)">&#128196; Purchase Orders (${pos.length})</button>
+      </div>
+
+      <!-- REQUEST INFO TAB -->
+      <div id="tab-req-info">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Request Information</div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Title</span><strong style="max-width:55%;text-align:right">${req.Title||req.RequestTitle||'—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Status</span><span>${bdg(req.RequestStatus)}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Priority</span><span>${bdg(req.Priority)}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Requested By</span><strong>${req.RequestedBy||'—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Department</span><strong>${req.Department||'—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Required By</span><strong>${fD(req.RequiredByDate)}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Expenditure Type</span><strong>${req.ExpenditureType||'—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px"><span style="color:var(--muted)">Cost Centre</span><strong>${req.CostCentre||'—'}</strong></div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Specifications & Budget</div>
+            <div style="padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted);display:block;margin-bottom:4px">Description / Specifications</span><span>${req.ItemDescription||req.Description||'—'}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Quantity Required</span><strong>${req.QuantityRequired||'—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Estimated Budget</span><strong style="color:var(--navy);font-size:15px">LKR ${fmt(req.EstimatedBudget)}</strong></div>
+            <div style="padding:6px 0;font-size:13px"><span style="color:var(--muted);display:block;margin-bottom:4px">Justification</span><span>${req.Justification||'—'}</span></div>
+            <div style="margin-top:14px;display:flex;flex-direction:column;gap:7px">
+              <button class="btn btn-pri btn-sm" onclick="closeM('po-detail');openM('add-quotation');document.getElementById('aq-ri').value='${reqId}'">+ Add Quotation for this Request</button>
+              ${req.RequestStatus==='Quotation Pending'?`<button class="btn btn-sm" style="background:#F0FDF4;color:var(--green);border-color:#BBF7D0" onclick="closeM('po-detail');openM('create-po');document.getElementById('cp-ri').value='${reqId}'">+ Create Purchase Order</button>`:''}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUOTATIONS TAB -->
+      <div id="tab-req-quots" style="display:none">
+        ${quots.length===0
+          ? `<div>${emp('&#128172;','No quotations yet','')}<div style="text-align:center"><button class="btn btn-pri" onclick="closeM('po-detail');openM('add-quotation');document.getElementById('aq-ri').value='${reqId}'">+ Add First Quotation</button></div></div>`
+          : quots.sort((a,b)=>(a.TotalAmount||0)-(b.TotalAmount||0)).map((q,i)=>`
+            <div class="qc ${i===0?'low':''}" style="margin-bottom:10px">
+              <div class="qct">
+                <div class="qcv">${i===0?'<span style="font-size:18px">&#127945;</span>':''}<strong>${q.VendorName||'—'}</strong>${bdg(q.QuotationStatus)}${i===0?'<span class="bdg bdg-submitted">Lowest Price</span>':''}</div>
+                <div class="qcp">LKR ${fmt(q.TotalAmount)}</div>
+              </div>
+              <div class="qm">
+                <div><div class="qml">Unit Price</div><strong>LKR ${fmt(q.UnitPrice)}</strong></div>
+                <div><div class="qml">Quantity</div><strong>${q.Quantity||'—'}</strong></div>
+                <div><div class="qml">Delivery</div><strong>${q.DeliveryDays?q.DeliveryDays+' days':'—'}</strong></div>
+                <div><div class="qml">Warranty</div><strong>${q.WarrantyPeriod||'—'}</strong></div>
+              </div>
+              ${q.Specifications?`<div style="margin-top:8px;font-size:11.5px;color:var(--muted);padding:6px 10px;background:#F8FAFC;border-radius:7px;border-left:3px solid #CBD5E1">${q.Specifications}</div>`:''}
+              ${(q.DocumentUrl||q.QuotationDoc)?`<div style="margin-top:8px">${flink(q.DocumentUrl||q.QuotationDoc,'&#128172; Download Quotation Document')}</div>`:''}
+            </div>`).join('')}
+      </div>
+
+      <!-- PURCHASE ORDERS TAB -->
+      <div id="tab-req-pos" style="display:none">
+        ${pos.length===0
+          ? `<div>${emp('&#128196;','No purchase orders yet','')}<div style="text-align:center"><button class="btn btn-pri" onclick="closeM('po-detail');openM('create-po');document.getElementById('cp-ri').value='${reqId}'">+ Create Purchase Order</button></div></div>`
+          : pos.map(p=>`
+            <div style="border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all var(--tr)" onclick="closeM('po-detail');setTimeout(()=>openPOD('${p._id}'),200)" onmouseover="this.style.borderColor='var(--blue)';this.style.background='#F8FAFC'" onmouseout="this.style.borderColor='var(--border)';this.style.background='white'">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <strong style="font-size:14px;color:var(--navy);font-family:'JetBrains Mono',monospace">${p.PONumber||'PO #'+p._id}</strong>
+                <div style="display:flex;gap:7px;align-items:center">${bdg(p.POStatus)}<span style="font-size:16px;font-weight:800;color:var(--navy)">LKR ${fmt(p.TotalAmount)}</span></div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px">
+                <div><span style="color:var(--muted)">Vendor</span><br><strong>${p.VendorName||'—'}</strong></div>
+                <div><span style="color:var(--muted)">Delivery Date</span><br><strong>${fD(p.ExpectedDelivery)}</strong></div>
+                <div><span style="color:var(--muted)">Created</span><br><strong>${fD(p.Created)}</strong></div>
+              </div>
+              ${(p.PODocumentUrl||p.PODocument)?`<div style="margin-top:8px">${flink(p.PODocumentUrl||p.PODocument,'&#128202; View PO Document')}</div>`:''}
+              <div style="margin-top:8px;font-size:11px;color:var(--muted)">&#128269; Click to open full PO details, approvals and invoices</div>
+            </div>`).join('')}
+      </div>
+    `;
+  } catch(e) {
+    document.getElementById('po-dbody').innerHTML = `<div style="color:var(--red);padding:28px;text-align:center"><div style="font-size:36px;margin-bottom:12px">&#10060;</div><strong>Error loading request details</strong><br><span style="font-size:12.5px;color:var(--muted)">${e.message}</span></div>`;
+  }
+}
+
 async function openPOD(poId) {
   openM('po-detail');
+  // Reset footer to PO mode
+  const mf = document.querySelector('#modal-po-detail .mf');
+  mf.innerHTML = `<button class="btn" onclick="closeM('po-detail')">Close</button><button class="btn btn-pri" onclick="closeM('po-detail');openM('add-invoice')">+ Add Invoice</button>`;
   document.getElementById('po-dtitle').textContent = 'Loading...';
-  document.getElementById('po-dbody').innerHTML = `<div class="ld"><div class="sp"></div><p>Loading details, quotations, approvals and invoices...</p></div>`;
+  document.getElementById('po-dbody').innerHTML = `<div class="ld"><div class="sp"></div><p>Loading PO details, quotations, approvals and invoices...</p></div>`;
   try {
     // gGetOne returns SharePoint fields with _id merged in from worker
     const po = await gGetOne(LISTS.POs, poId);
