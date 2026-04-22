@@ -464,18 +464,19 @@ select.fc option{background:#FFFFFF;color:var(--txt);}
   <div class="view" id="view-quotations">
     <div class="card"><div class="ch"><div class="ct">&#128172; Quotations</div>
       <button class="btn btn-pri" onclick="addRip(event);openM('add-quotation')">+ Add Quotation</button></div>
-      <div class="tw"><table style="min-width:950px"><thead><tr>
+      <div class="tw"><table style="min-width:1000px"><thead><tr>
   <th style="width:45px">ID</th>
   <th style="width:70px">Req ID</th>
-  <th style="width:150px">Vendor</th>
-  <th style="width:120px">Unit Price (LKR)</th>
-  <th style="width:50px">Qty</th>
-  <th style="width:120px">Total (LKR)</th>
-  <th style="width:90px">Delivery Days</th>
-  <th style="width:90px">Warranty</th>
-  <th style="width:100px">Valid Until</th>
-  <th style="width:120px">Document</th>
-  <th style="width:100px">Status</th>
+  <th style="width:140px">Vendor</th>
+  <th style="width:115px">Unit Price (LKR)</th>
+  <th style="width:45px">Qty</th>
+  <th style="width:115px">Total (LKR)</th>
+  <th style="width:85px">Delivery Days</th>
+  <th style="width:80px">Warranty</th>
+  <th style="width:95px">Valid Until</th>
+  <th style="width:110px">Document</th>
+  <th style="width:95px">Status</th>
+  <th style="width:90px">Actions</th>
 </tr></thead>
       <tbody id="qut-tb"><tr><td colspan="11"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
     </div>
@@ -487,16 +488,16 @@ select.fc option{background:#FFFFFF;color:var(--txt);}
     <div class="card"><div class="ch"><div class="ct">&#128196; Purchase Orders</div>
       <select class="fc" style="width:155px;padding:7px 10px" onchange="fPOs(this.value)"><option value="">All Statuses</option><option>Pending Approval</option><option>Approved</option><option>Rejected</option><option>Sent to Vendor</option><option>Completed</option></select>
     </div>
-    <div class="tw"><table style="min-width:900px"><thead><tr>
+    <div class="tw"><table style="min-width:950px"><thead><tr>
   <th style="width:45px">ID</th>
-  <th style="width:110px">PO Number</th>
-  <th style="width:140px">Vendor</th>
+  <th style="width:120px">PO Number</th>
+  <th style="width:130px">Vendor</th>
   <th>Item Description</th>
   <th style="width:130px">Total (LKR)</th>
   <th style="width:100px">Delivery Date</th>
-  <th style="width:120px">PO Document</th>
-  <th style="width:120px">Status</th>
-  <th style="width:190px">Actions</th>
+  <th style="width:110px">PO Document</th>
+  <th style="width:110px">Status</th>
+  <th style="width:220px">Actions</th>
 </tr></thead>
     <tbody id="po-tb"><tr><td colspan="9"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div>
     </div>
@@ -725,9 +726,35 @@ git push origin main</div>
 
 <!-- CREATE PO + Excel upload -->
 <div class="mo" id="modal-create-po">
-  <div class="modal"><div class="mh"><div class="mt">&#128196; Create PO + Upload PO Sheet</div><button class="mx" onclick="closeM('create-po')">&#10005;</button></div>
+  <div class="modal" style="width:780px"><div class="mh"><div class="mt">&#128196; Create Purchase Order</div><button class="mx" onclick="closeM('create-po')">&#10005;</button></div>
   <div class="mb">
-    <div class="fr"><div class="fg"><label class="fl">Request ID <span class="req">*</span></label><input class="fc" id="cp-ri" type="number"></div><div class="fg"><label class="fl">Quotation ID <span class="req">*</span></label><input class="fc" id="cp-qi" type="number"></div></div>
+
+    <!-- Step 1: Enter Request ID to load quotations -->
+    <div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:10px;padding:13px 16px;margin-bottom:15px">
+      <div style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px">&#9312; Select Request &amp; Quotation</div>
+      <div class="fr">
+        <div class="fg" style="margin-bottom:0">
+          <label class="fl">Request ID <span class="req">*</span></label>
+          <div style="display:flex;gap:8px">
+            <input class="fc" id="cp-ri" type="number" placeholder="Enter Request ID" style="flex:1">
+            <button class="btn btn-pri" onclick="loadQuotsForPO()" style="white-space:nowrap">&#128269; Load Quotations</button>
+          </div>
+          <div class="fhint">Enter the Request ID then click Load Quotations to pick one</div>
+        </div>
+        <div class="fg" style="margin-bottom:0">
+          <label class="fl">Quotation ID <span class="req">*</span></label>
+          <input class="fc" id="cp-qi" type="number" placeholder="Auto-filled when you select a quote" readonly style="background:#F8FAFC">
+        </div>
+      </div>
+      <!-- Quotation picker cards -->
+      <div id="cp-quots-list" style="margin-top:12px;display:none">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Available Quotations — click to select:</div>
+        <div id="cp-quots-cards"></div>
+      </div>
+    </div>
+
+    <!-- Step 2: PO Details (auto-filled from selected quote) -->
+    <div style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">&#9313; PO Details</div>
     <div class="fr"><div class="fg"><label class="fl">Vendor Name <span class="req">*</span></label><input class="fc" id="cp-vn"></div><div class="fg"><label class="fl">Vendor Email</label><input class="fc" id="cp-ve"></div></div>
     <div class="fg"><label class="fl">Item Description <span class="req">*</span></label><input class="fc" id="cp-it"></div>
     <div class="fr"><div class="fg"><label class="fl">Quantity <span class="req">*</span></label><input class="fc" id="cp-qt" type="number" value="1" oninput="cPO()"></div><div class="fg"><label class="fl">Unit Price (LKR) <span class="req">*</span></label><input class="fc" id="cp-up" type="number" placeholder="0" oninput="cPO()"></div></div>
@@ -738,7 +765,7 @@ git push origin main</div>
     </div>
     <div class="fr"><div class="fg"><label class="fl">Delivery Address</label><input class="fc" id="cp-ad"></div><div class="fg"><label class="fl">Remarks</label><input class="fc" id="cp-re"></div></div>
     <div class="fg">
-      <label class="fl">&#128202; PO Excel Sheet / PDF <span style="color:var(--blue);font-size:10px;text-transform:none;letter-spacing:0;font-weight:600">Upload signed PO sheet</span></label>
+      <label class="fl">&#128202; PO Document (Excel / PDF) <span style="color:var(--blue);font-size:10px;text-transform:none;letter-spacing:0;font-weight:600">Upload signed PO sheet</span></label>
       <div class="upz" id="cp-zone" onclick="document.getElementById('cp-fl').click()">
         <input type="file" id="cp-fl" accept=".xlsx,.xls,.pdf,.docx" onchange="hFile(this,'cp-fn','cp-zone')">
         <div class="uz-ic">&#128202;</div>
@@ -748,7 +775,37 @@ git push origin main</div>
       </div>
     </div>
   </div>
-  <div class="mf"><button class="btn" onclick="closeM('create-po')">Cancel</button><button class="btn btn-pri" onclick="addRip(event);subPO()">Create Purchase Order</button></div>
+  <div class="mf"><button class="btn" onclick="closeM('create-po')">Cancel</button><button class="btn btn-pri" onclick="addRip(event);subPO()">&#128196; Create Purchase Order</button></div>
+  </div>
+</div>
+
+<!-- EDIT PO MODAL -->
+<div class="mo" id="modal-edit-po">
+  <div class="modal"><div class="mh"><div class="mt">&#9998; Edit Purchase Order</div><button class="mx" onclick="closeM('edit-po')">&#10005;</button></div>
+  <div class="mb">
+    <input type="hidden" id="ep-id">
+    <div class="fr"><div class="fg"><label class="fl">PO Number</label><input class="fc" id="ep-num" readonly style="background:#F8FAFC;color:var(--muted)"></div><div class="fg"><label class="fl">Status</label><select class="fc" id="ep-st"><option>Pending Approval</option><option>Approved</option><option>Rejected</option><option>Sent to Vendor</option><option>Completed</option></select></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Vendor Name <span class="req">*</span></label><input class="fc" id="ep-vn"></div><div class="fg"><label class="fl">Vendor Email</label><input class="fc" id="ep-ve"></div></div>
+    <div class="fg"><label class="fl">Item Description <span class="req">*</span></label><input class="fc" id="ep-it"></div>
+    <div class="fr"><div class="fg"><label class="fl">Quantity <span class="req">*</span></label><input class="fc" id="ep-qt" type="number" min="1" oninput="cEditPO()"></div><div class="fg"><label class="fl">Unit Price (LKR) <span class="req">*</span></label><input class="fc" id="ep-up" type="number" oninput="cEditPO()"></div></div>
+    <div class="fr"><div class="fg"><label class="fl">Tax %</label><input class="fc" id="ep-tx" type="number" value="10" oninput="cEditPO()"></div><div class="fg"><label class="fl">Expected Delivery</label><input class="fc" id="ep-de" type="date"></div></div>
+    <div class="tot-box">
+      <div><div style="font-size:11px;color:var(--blue)">Sub Total: <strong id="ep-sub" style="color:var(--txt)">LKR 0</strong></div><div style="font-size:11px;color:var(--blue);margin-top:2px">Tax: <strong id="ep-txamt" style="color:var(--txt)">LKR 0</strong></div></div>
+      <span style="margin:0 10px;color:var(--border2)">|</span><span>Grand Total:</span><strong id="ep-tot">LKR 0</strong>
+    </div>
+    <div class="fr"><div class="fg"><label class="fl">Delivery Address</label><input class="fc" id="ep-ad"></div><div class="fg"><label class="fl">Remarks</label><input class="fc" id="ep-re"></div></div>
+    <div class="fg">
+      <label class="fl">&#128202; Replace PO Document (optional)</label>
+      <div class="upz" id="ep-zone" onclick="document.getElementById('ep-fl').click()">
+        <input type="file" id="ep-fl" accept=".xlsx,.xls,.pdf,.docx" onchange="hFile(this,'ep-fn','ep-zone')">
+        <div class="uz-ic">&#128202;</div>
+        <div class="uz-ti">Upload new PO document to replace existing</div>
+        <div class="uz-su">Leave empty to keep the existing document</div>
+        <div id="ep-fn"></div>
+      </div>
+    </div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeM('edit-po')">Cancel</button><button class="btn btn-pri" onclick="addRip(event);saveEditPO()">&#9998; Save PO Changes</button></div>
   </div>
 </div>
 
@@ -1142,21 +1199,11 @@ function showV(id, btn) {
 
 // ── Modals ──
 function openM(n) {
+  // Clear form data before opening so old submissions don't persist
+  // (except edit modals which pre-fill programmatically)
+  const skipClear = ['edit-request','edit-po','po-detail','confirm-delete'];
+  if (!skipClear.includes(n)) clearForm(n);
   document.getElementById('modal-'+n).classList.add('open');
-  // Reset approval preview when opening approve modal
-  if(n==='approve-po') {
-    const prev = document.getElementById('ap-po-preview');
-    if(prev) prev.style.display='none';
-    // Reset upload zones
-    ['ap-po-zone','ap-zone'].forEach(id=>{
-      const z=document.getElementById(id);
-      if(z){z.classList.remove('done','drag');}
-    });
-    ['ap-po-fn','ap-fn'].forEach(id=>{
-      const el=document.getElementById(id);
-      if(el) el.innerHTML='';
-    });
-  }
 }
 function closeM(n) { document.getElementById('modal-'+n).classList.remove('open'); }
 document.querySelectorAll('.mo').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); }));
@@ -1192,6 +1239,7 @@ function animN(id, target, prefix='', suffix='') {
 // DASHBOARD
 // ═══════════════════════════════════════════════════
 async function loadDash() {
+  // Always reset data caches so approval status changes show immediately
   if (!API) {
     setConn('err','URL not set');
     ['ds-act','ds-dept','ds-pend','ds-vend'].forEach(id => {
@@ -1410,8 +1458,11 @@ async function loadQuts() {
           <td>${q.DeliveryDays?q.DeliveryDays+' days':'—'}</td>
           <td>${q.WarrantyPeriod||'—'}</td>
           <td style="font-size:12px">${fD(q.ValidUntil)}</td>
-          <td>${flink(q.DocumentUrl||q.QuotationDoc,'View PDF')}</td>
+          <td>${q.QuotationDocUrl?flink(q.QuotationDocUrl,'&#128206; View Doc'):'—'}</td>
           <td>${bdg(q.QuotationStatus)}</td>
+          <td style="white-space:nowrap">
+            <button class="btn btn-sm" onclick="openQuotDetail('${q._id}')">&#128269; View</button>
+          </td>
         </tr>`).join('');
   } catch(e) { tb.innerHTML=`<tr><td colspan="11" style="color:var(--red);padding:14px">&#10060; ${e.message}</td></tr>`; }
 }
@@ -1430,7 +1481,7 @@ async function loadPOs() {
       {l:'Pending Approval',v:pp,c:mc_colors[2]},{l:'Total Value',v:'LKR '+fK(tv),c:mc_colors[3]}
     ].map((s,i)=>`<div class="mc" style="border-top-color:${s.c};animation-delay:${i*.07}s"><div class="mc-lb">${s.l}</div><div class="mc-vl" style="color:${s.c}">${s.v}</div></div>`).join('');
     renderPOs(_pos);
-  } catch(e) { tb.innerHTML=`<tr><td colspan="9" style="color:var(--red);padding:14px">&#10060; ${e.message}</td></tr>`; }
+  } catch(e) { tb.innerHTML=`<tr><td colspan="10" style="color:var(--red);padding:14px">&#10060; ${e.message}</td></tr>`; }
 }
 function renderPOs(items) {
   const tb = document.getElementById('po-tb');
@@ -1468,7 +1519,7 @@ async function loadAprs() {
           <td>${bdg(a.ApprovalAction)}</td>
           <td style="font-size:12px">${fD(a.ActionDate)}</td>
           <td style="color:var(--muted);font-size:12px;max-width:180px">${a.ApprovalComments||'—'}</td>
-          <td>${flink(a.ApprovalDocUrl||a.ApprovalDoc,'Signed Doc')}</td>
+          <td>${a.ApprovalDocUrl ? flink(a.ApprovalDocUrl,'&#128221; Signed Doc') : '—'}</td>
         </tr>`).join('');
   } catch(e) { tb.innerHTML=`<tr><td colspan="7" style="color:var(--red);padding:14px">&#10060; ${e.message}</td></tr>`; }
 }
@@ -1501,7 +1552,7 @@ function renderInvs(items) {
         <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(i.InvoiceAmount)}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(i.TaxAmount)}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px">LKR ${fmt(i.TotalAmount)}</td>
-        <td>${flink(i.InvoiceDocUrl||i.InvoiceDoc,'Invoice PDF')}</td>
+        <td>${i.InvoiceDocUrl ? flink(i.InvoiceDocUrl,'&#129534; Invoice PDF') : '—'}</td>
         <td>${bdg(i.PaymentStatus)}</td>
         <td style="white-space:nowrap">
           ${i.PaymentStatus!=='Paid'
@@ -1597,6 +1648,84 @@ async function loadRpts() {
 // ═══════════════════════════════════════════════
 // REQUEST DETAIL MODAL — opens when View is clicked in Requests table
 // ═══════════════════════════════════════════════
+
+// ═══ QUOTATION DETAIL VIEW ═══
+async function openQuotDetail(quotId) {
+  openM('po-detail');
+  const mf = document.querySelector('#modal-po-detail .mf');
+  mf.innerHTML = '<button class="btn" onclick="closeM(\'po-detail\')">Close</button>';
+  document.getElementById('po-dtitle').textContent = 'Quotation #' + quotId;
+  document.getElementById('po-dbody').innerHTML = '<div class="ld"><div class="sp"></div><p>Loading quotation...</p></div>';
+  try {
+    const q = await gGetOne(LISTS.Quotations, quotId);
+    document.getElementById('po-dtitle').textContent = 'Quotation — ' + (q.VendorName || '#' + quotId);
+
+    function row(label, val) {
+      return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #F1F5F9;font-size:13px">'
+        + '<span style="color:var(--muted)">'+label+'</span>'
+        + '<strong style="text-align:right;max-width:60%">'+val+'</strong></div>';
+    }
+
+    var docHtml = q.QuotationDocUrl
+      ? '<div style="margin-top:14px;padding:12px;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:9px">'
+          + '<div style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">&#128206; Quotation Document</div>'
+          + flink(q.QuotationDocUrl, '&#128196; Download / View Quotation Document')
+          + '</div>'
+      : '<div style="margin-top:14px;padding:11px;background:#F8FAFC;border:1px solid var(--border);border-radius:9px;font-size:12.5px;color:var(--muted)">No document uploaded for this quotation</div>';
+
+    var selBtn = '';
+    if (q.QuotationStatus !== 'Selected') {
+      selBtn = '<button class="btn btn-grn" onclick="'
+        + 'closeM(\'po-detail\');'
+        + 'openM(\'create-po\');'
+        + 'document.getElementById(\'cp-ri\').value=\'' + (q.RequestItemId||'') + '\';'
+        + 'document.getElementById(\'cp-qi\').value=\'' + quotId + '\';'
+        + 'document.getElementById(\'cp-vn\').value=\'' + (q.VendorName||'').replace(/\'/g,'') + '\';'
+        + 'document.getElementById(\'cp-up\').value=\'' + (q.UnitPrice||0) + '\';'
+        + 'document.getElementById(\'cp-qt\').value=\'' + (q.Quantity||1) + '\';'
+        + 'cPO()'
+        + '">&#9989; Select &amp; Create PO</button>';
+    } else {
+      selBtn = '<span class="bdg bdg-approved" style="padding:8px 14px;font-size:13px">&#9989; Already Selected</span>';
+    }
+
+    var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+      + '<div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Vendor Information</div>'
+      + row('Vendor Name', q.VendorName||'—')
+      + row('Vendor Email', q.VendorEmail||'—')
+      + row('Vendor Contact', q.VendorContact||'—')
+      + row('Status', bdg(q.QuotationStatus||'Received'))
+      + row('Valid Until', fD(q.ValidUntil))
+      + '</div>'
+      + '<div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;padding-bottom:6px;border-bottom:2px solid #EFF6FF;margin-bottom:9px">Pricing &amp; Terms</div>'
+      + row('Request ID', '#' + (q.RequestItemId||'—'))
+      + row('Unit Price (LKR)', 'LKR ' + fmt(q.UnitPrice))
+      + row('Quantity', q.Quantity||'—')
+      + '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><span style="color:var(--muted)">Total Amount</span><strong style="color:var(--navy);font-size:16px">LKR ' + fmt(q.TotalAmount) + '</strong></div>'
+      + row('Delivery Days', q.DeliveryDays ? q.DeliveryDays + ' days' : '—')
+      + row('Warranty', q.WarrantyPeriod||'—')
+      + '</div>'
+      + '</div>'
+      + (q.Specifications
+          ? '<div style="margin-top:14px;padding:11px 14px;background:#F8FAFC;border-radius:9px;border-left:3px solid var(--blue)">'
+              + '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Specifications</div>'
+              + '<div style="font-size:13px">' + q.Specifications + '</div>'
+              + '</div>'
+          : '')
+      + docHtml
+      + '<div style="margin-top:14px;display:flex;gap:8px">' + selBtn + '</div>';
+
+    document.getElementById('po-dbody').innerHTML = html;
+    mf.innerHTML = '<button class="btn" onclick="closeM(\'po-detail\')">Close</button>'
+      + (q.QuotationStatus !== 'Selected' ? ' ' + selBtn : '');
+
+  } catch(e) {
+    document.getElementById('po-dbody').innerHTML = '<div style="color:var(--red);padding:28px;text-align:center"><div style="font-size:36px;margin-bottom:12px">&#10060;</div><strong>Error loading quotation</strong><br><span style="font-size:12.5px;color:var(--muted)">'+e.message+'</span></div>';
+  }
+}
+
 async function openReqDetail(reqId) {
   openM('po-detail');
   const mf = document.querySelector('#modal-po-detail .mf');
@@ -1666,7 +1795,7 @@ async function openReqDetail(reqId) {
         var selBtn = isSelected
           ? '<span class="bdg bdg-approved" style="padding:5px 10px">&#9989; Selected</span>'
           : '<button class="btn btn-sm btn-grn" data-qid="'+q._id+'" data-rid="'+reqId+'" data-vn="'+encodeURIComponent(q.VendorName||'')+'" data-ve="'+encodeURIComponent(q.VendorEmail||'')+'" data-up="'+(q.UnitPrice||0)+'" data-qty="'+(q.Quantity||1)+'" data-tot="'+(q.TotalAmount||0)+'" onclick="selectQuotFromBtn(this)">&#9989; Select &amp; Create PO</button>';
-        var docLink = (q.DocumentUrl||q.QuotationDoc) ? flink(q.DocumentUrl||q.QuotationDoc,'&#128172; Quotation Document') : '';
+        var docLink = q.QuotationDocUrl ? flink(q.QuotationDocUrl,'&#128172; Quotation Document') : '';
         quotsHtml += '<div class="qc '+(isSelected?'sel':'')+(i===0?' low':'')+'" style="margin-bottom:10px">'
           + '<div class="qct">'
           + '<div class="qcv">'+(i===0?'<span style="font-size:18px">&#127945;</span>':'')+'<strong>'+(q.VendorName||'—')+'</strong>'+bdg(q.QuotationStatus)+(i===0?'<span class="bdg bdg-submitted">Lowest Price</span>':'')+'</div>'
@@ -1765,9 +1894,9 @@ async function openPOD(poId) {
     // ALL ATTACHMENTS
     var attachLinks = [];
     if (po.PODocumentUrl||po.PODocument) attachLinks.push(flink(po.PODocumentUrl||po.PODocument,'&#128202; PO Document'));
-    apprs.forEach(function(a){ if(a.ApprovalDocUrl||a.ApprovalDoc) attachLinks.push(flink(a.ApprovalDocUrl||a.ApprovalDoc,'&#128221; Approval Doc')); });
-    invs.forEach(function(i){ if(i.InvoiceDocUrl||i.InvoiceDoc) attachLinks.push(flink(i.InvoiceDocUrl||i.InvoiceDoc,'&#129534; Invoice PDF')); });
-    allQ.forEach(function(q){ if(q.DocumentUrl||q.QuotationDoc) attachLinks.push(flink(q.DocumentUrl||q.QuotationDoc,'&#128172; Quote Doc')); });
+    apprs.forEach(function(a){ if(a.ApprovalDocUrl) attachLinks.push(flink(a.ApprovalDocUrl,'&#128221; Approval Doc')); });
+    invs.forEach(function(i){ if(i.InvoiceDocUrl) attachLinks.push(flink(i.InvoiceDocUrl,'&#129534; Invoice PDF')); });
+    allQ.forEach(function(q){ if(q.QuotationDocUrl) attachLinks.push(flink(q.QuotationDocUrl,'&#128172; Quote Doc')); });
     var attachHtml = attachLinks.length > 0
       ? attachLinks.join('')
       : '<span style="font-size:12px;color:var(--subtle)">No documents uploaded yet</span>';
@@ -1820,7 +1949,7 @@ async function openPOD(poId) {
     } else {
       allQ.sort(function(a,b){return (a.TotalAmount||0)-(b.TotalAmount||0);}).forEach(function(q,i){
         var isSelected = q.QuotationStatus === 'Selected';
-        var docLink = (q.DocumentUrl||q.QuotationDoc) ? '<div style="margin-top:8px">'+flink(q.DocumentUrl||q.QuotationDoc,'&#128172; Download Quotation Document')+'</div>' : '';
+        var docLink = q.QuotationDocUrl ? '<div style="margin-top:8px">'+flink(q.QuotationDocUrl,'&#128172; Download Quotation Document')+'</div>' : '';
         var specHtml = q.Specifications ? '<div style="margin-top:9px;font-size:11.5px;color:var(--muted);padding:7px 10px;background:#F1F5F9;border-radius:7px;border-left:3px solid #CBD5E1">'+q.Specifications+'</div>' : '';
         quotsHtml += '<div class="qc '+(isSelected?'sel':'')+(i===0?' low':'')+'">'
           + '<div class="qct">'
@@ -1848,7 +1977,7 @@ async function openPOD(poId) {
       apprs.forEach(function(a){
         var dc = a.ApprovalAction==='Approved'?'ok':a.ApprovalAction==='Rejected'?'err':'';
         var commentHtml = a.ApprovalComments ? '<div class="tl-q '+((a.ApprovalAction||'').toLowerCase())+'">'+a.ApprovalComments+'</div>' : '';
-        var aprDocHtml  = (a.ApprovalDocUrl||a.ApprovalDoc) ? '<div style="margin-top:7px">'+flink(a.ApprovalDocUrl||a.ApprovalDoc,'&#128221; Signed Approval Document')+'</div>' : '';
+        var aprDocHtml  = a.ApprovalDocUrl ? '<div style="margin-top:7px">'+flink(a.ApprovalDocUrl,'&#128221; Signed Approval Document')+'</div>' : '';
         apprsHtml += '<li class="tli"><div class="tld '+dc+'"></div><div>'
           + '<div class="tl-ti">'+(a.ApprovalAction||'')+ ' by '+(a.ApproverName||'—')+'</div>'
           + '<div class="tl-su">'+fD(a.ActionDate)+' · '+(a.ApproverEmail||'')+'</div>'
@@ -1868,7 +1997,7 @@ async function openPOD(poId) {
         var paidBtn = inv.PaymentStatus !== 'Paid'
           ? '<button class="btn btn-sm btn-grn" onclick="markPaid(\''+inv._id+'\')">&#10003; Mark Paid</button>'
           : '<span style="color:var(--green);font-weight:700;font-size:12px">&#9989; Paid</span>';
-        var invDocHtml  = (inv.InvoiceDocUrl||inv.InvoiceDoc) ? '<div style="margin-top:10px">'+flink(inv.InvoiceDocUrl||inv.InvoiceDoc,'&#128196; Download Invoice Document')+'</div>' : '';
+        var invDocHtml  = inv.InvoiceDocUrl ? '<div style="margin-top:10px">'+flink(inv.InvoiceDocUrl,'&#128196; Download Invoice Document')+'</div>' : '';
         var invNotesHtml = inv.Notes ? '<div style="font-size:11.5px;color:var(--muted);margin-top:8px;padding:6px 9px;background:#F1F5F9;border-radius:7px">'+inv.Notes+'</div>' : '';
         invsHtml += '<div style="border:1.5px solid var(--border);border-radius:10px;padding:16px;margin-bottom:11px;background:white">'
           + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:13px">'
@@ -1946,6 +2075,42 @@ function cPO() {
 function cInv() { const a=Number(document.getElementById('iv-am').value)||0,t=Number(document.getElementById('iv-tx').value)||0; document.getElementById('iv-tot').textContent='LKR '+fmt(a+t); }
 
 // ── FORM SUBMISSIONS ──
+
+// ═══ CLEAR FORM — resets all inputs, selects, textareas and upload zones ═══
+function clearForm(modalName) {
+  const modal = document.getElementById('modal-' + modalName);
+  if (!modal) return;
+  // Reset all text inputs, numbers, dates, emails, textareas
+  modal.querySelectorAll('input:not([type=hidden]):not([readonly]), textarea').forEach(function(el) {
+    el.value = '';
+  });
+  // Reset selects to first option
+  modal.querySelectorAll('select').forEach(function(el) {
+    el.selectedIndex = 0;
+  });
+  // Reset upload zones
+  modal.querySelectorAll('.upz').forEach(function(zone) {
+    zone.classList.remove('done', 'drag');
+  });
+  modal.querySelectorAll('[id$="-fn"]').forEach(function(el) {
+    el.innerHTML = '';
+  });
+  // Reset file inputs
+  modal.querySelectorAll('input[type=file]').forEach(function(el) {
+    el.value = '';
+  });
+  // Reset quotation picker (Create PO modal)
+  const quotList = document.getElementById('cp-quots-list');
+  if (quotList) quotList.style.display = 'none';
+  const quotCards = document.getElementById('cp-quots-cards');
+  if (quotCards) quotCards.innerHTML = '';
+  // Reset totals
+  ['aq-tot','cp-sub','cp-txamt','cp-tot','iv-tot'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = el.id.includes('tot') ? 'LKR 0' : '0';
+  });
+}
+
 async function subReq() {
   const title=document.getElementById('nr-ti').value.trim(), by=document.getElementById('nr-by').value.trim();
   if(!title||!by){toast('Validation Error','Title and Requested By are required','warn');return;}
@@ -1982,43 +2147,134 @@ async function subReq() {
       } else { throw e; }
     }
     toast('Request Submitted','Request #'+id+' created.','ok');
-    closeM('new-request'); refreshAll();
+    clearForm('new-request');
+    closeM('new-request');
+    refreshAll();
   } catch(e) { toast('Error',e.message,'err'); }
 }
 
 async function subQut() {
-  const reqId=document.getElementById('aq-ri').value,vendor=document.getElementById('aq-vn').value.trim();
-  const price=Number(document.getElementById('aq-up').value),qty=Number(document.getElementById('aq-qt').value);
-  if(!reqId||!vendor||!price||!qty){toast('Validation Error','Request ID, Vendor, Price and Qty required','warn');return;}
-  let docUrl=null;
-  const fi=document.getElementById('aq-fl');
-  if(fi.files[0]){toast('Uploading','Uploading quotation document...','warn');docUrl=await uploadFile(fi.files[0],DOC_LIB+'/Quotations');}
+  const reqId  = document.getElementById('aq-ri').value;
+  const vendor = document.getElementById('aq-vn').value.trim();
+  const price  = Number(document.getElementById('aq-up').value);
+  const qty    = Number(document.getElementById('aq-qt').value);
+  if (!reqId||!vendor||!price||!qty) { toast('Validation Error','Request ID, Vendor, Price and Qty required','warn'); return; }
+
+  // Upload document to SharePoint library (file storage only — not a list column)
+  let docUrl = null;
+  const fi = document.getElementById('aq-fl');
+  if (fi.files[0]) {
+    toast('Uploading','Uploading quotation document...','warn');
+    docUrl = await uploadFile(fi.files[0], DOC_LIB+'/Quotations');
+  }
+
+  // Use EXACT column names from SharePoint Quotations list
+  const fields = {
+    Title:           vendor + ' - Quote #' + reqId,
+    RequestItemId:   Number(reqId),
+    VendorName:      vendor,
+    UnitPrice:       price,
+    Quantity:        qty,
+    TotalAmount:     price * qty,
+    QuotationStatus: 'Received'
+  };
+  // Optional columns — only send if filled
+  const ve = document.getElementById('aq-ve').value;
+  if (ve) fields.VendorEmail = ve;
+  const dd = document.getElementById('aq-dd').value;
+  if (dd) fields.DeliveryDays = Number(dd);
+  const wa = document.getElementById('aq-wa').value;
+  if (wa) fields.WarrantyPeriod = wa;
+  const sp = document.getElementById('aq-sp').value;
+  if (sp) fields.Specifications = sp;
+  const vu = document.getElementById('aq-vu').value;
+  if (vu) fields.ValidUntil = vu;
+  // NOTE: No document URL column in Quotations list — file stored in SharePoint library only
+  // Store the URL in the Title as a reference note if uploaded
+  if (docUrl) {
+    // Try to save URL — requires 'QuotationDocUrl' Single Line column in SharePoint Quotations list
+    // Go to SharePoint → Quotations list → + Add column → Single line of text → Name: QuotationDocUrl
+    fields.QuotationDocUrl = docUrl;
+  }
+
   try {
-    const id = await gPost(LISTS.Quotations,{Title:`${vendor} - Quote #${reqId}`,RequestItemId:Number(reqId),VendorName:vendor,VendorEmail:document.getElementById('aq-ve').value,UnitPrice:price,Quantity:qty,TotalAmount:price*qty,DeliveryDays:Number(document.getElementById('aq-dd').value)||0,WarrantyPeriod:document.getElementById('aq-wa').value,Specifications:document.getElementById('aq-sp').value,QuotationStatus:'Received',ValidUntil:document.getElementById('aq-vu').value||null,DocumentUrl:docUrl,QuotationDoc:docUrl});
-    await gPatch(LISTS.Requests,reqId,{RequestStatus:'Quotation Pending'});
-    toast('Quotation Saved','#'+id+(docUrl?' with document':''),'ok');
-    closeM('add-quotation'); refreshAll();
-  } catch(e) { toast('Error',e.message,'err'); }
+    const id = await gPost(LISTS.Quotations, fields);
+    await gPatch(LISTS.Requests, reqId, {RequestStatus: 'Quotation Pending'});
+    toast('Quotation Saved', '#'+id+(docUrl?' — document uploaded':''), 'ok');
+    clearForm('add-quotation');
+    closeM('add-quotation');
+    refreshAll();
+  } catch(e) {
+    // If QuotationDocUrl column doesn't exist, retry without it
+    if (e.message.includes('not recognized') || e.message.includes('invalid')) {
+      delete fields.QuotationDocUrl;
+      const id2 = await gPost(LISTS.Quotations, fields).catch(e2=>{ toast('Error',e2.message,'err'); return null; });
+      if (id2) {
+        await gPatch(LISTS.Requests, reqId, {RequestStatus: 'Quotation Pending'});
+        toast('Quotation Saved', '#'+id2+(docUrl?' (doc uploaded to library, add QuotationDocUrl column to link it)':''), 'warn');
+        clearForm('add-quotation');
+        closeM('add-quotation');
+        refreshAll();
+      }
+    } else { toast('Error', e.message, 'err'); }
+  }
 }
 
 function genPO(){const d=new Date();return`PO-${d.getFullYear().toString().slice(-2)}${String(d.getMonth()+1).padStart(2,'0')}-${Math.floor(Math.random()*9000)+1000}`;}
 
 async function subPO() {
-  const reqId=document.getElementById('cp-ri').value,quotId=document.getElementById('cp-qi').value;
-  const vendor=document.getElementById('cp-vn').value.trim(),item=document.getElementById('cp-it').value.trim();
-  const qty=Number(document.getElementById('cp-qt').value),price=Number(document.getElementById('cp-up').value);
-  if(!reqId||!quotId||!vendor||!item||!qty||!price){toast('Validation Error','All required fields must be filled','warn');return;}
-  const tax=Number(document.getElementById('cp-tx').value)||0,sub=qty*price,taxAmt=sub*(tax/100),total=sub+taxAmt,poNum=genPO();
-  let docUrl=null;
-  const fi=document.getElementById('cp-fl');
-  if(fi.files[0]){toast('Uploading','Uploading PO document...','warn');docUrl=await uploadFile(fi.files[0],DOC_LIB+'/PurchaseOrders');}
+  const reqId  = document.getElementById('cp-ri').value;
+  const quotId = document.getElementById('cp-qi').value;
+  const vendor = document.getElementById('cp-vn').value.trim();
+  const item   = document.getElementById('cp-it').value.trim();
+  const qty    = Number(document.getElementById('cp-qt').value);
+  const price  = Number(document.getElementById('cp-up').value);
+  if (!reqId||!quotId||!vendor||!item||!qty||!price) {
+    toast('Validation Error','Please fill all required fields. Make sure to select a quotation first.','warn'); return;
+  }
+  const tax    = Number(document.getElementById('cp-tx').value)||0;
+  const sub    = qty*price, taxAmt = sub*(tax/100), total = sub+taxAmt;
+  const poNum  = genPO();
+
+  let docUrl = null;
+  const fi = document.getElementById('cp-fl');
+  if (fi.files[0]) { toast('Uploading','Uploading PO document...','warn'); docUrl = await uploadFile(fi.files[0], DOC_LIB+'/PurchaseOrders'); }
+
+  const fields = {
+    Title: poNum, PONumber: poNum,
+    RequestItemId: Number(reqId), QuotationItemId: Number(quotId),
+    VendorName: vendor, ItemDescription: item,
+    Quantity: qty, UnitPrice: price,
+    SubTotal: sub, TaxPercent: tax, TaxAmount: taxAmt, TotalAmount: total,
+    POStatus: 'Pending Approval'
+  };
+  const ve = document.getElementById('cp-ve').value;   if (ve) fields.VendorEmail = ve;
+  const ad = document.getElementById('cp-ad').value;   if (ad) fields.DeliveryAddress = ad;
+  const de = document.getElementById('cp-de').value;   if (de) fields.ExpectedDelivery = de;
+  const re = document.getElementById('cp-re').value;   if (re) fields.Remarks = re;
+  if (docUrl) fields.PODocumentUrl = docUrl;
+
   try {
-    const id = await gPost(LISTS.POs,{Title:poNum,PONumber:poNum,RequestItemId:Number(reqId),QuotationItemId:Number(quotId),VendorName:vendor,VendorEmail:document.getElementById('cp-ve').value,ItemDescription:item,Quantity:qty,UnitPrice:price,SubTotal:sub,TaxPercent:tax,TaxAmount:taxAmt,TotalAmount:total,POStatus:'Pending Approval',DeliveryAddress:document.getElementById('cp-ad').value,ExpectedDelivery:document.getElementById('cp-de').value||null,Remarks:document.getElementById('cp-re').value,PODocumentUrl:docUrl,PODocument:docUrl});
-    await gPatch(LISTS.Quotations,quotId,{QuotationStatus:'Selected'});
-    await gPatch(LISTS.Requests,reqId,{RequestStatus:'PO Created'});
-    toast('PO Created',poNum+' (ID:'+id+')'+(docUrl?' with document':''),'ok');
-    closeM('create-po'); refreshAll();
-  } catch(e) { toast('Error',e.message,'err'); }
+    const id = await gPost(LISTS.POs, fields);
+    await gPatch(LISTS.Quotations, quotId, {QuotationStatus:'Selected'});
+    await gPatch(LISTS.Requests,   reqId,  {RequestStatus:'PO Created'});
+    toast('PO Created', poNum+' (ID:'+id+')'+(docUrl?' — document uploaded':''), 'ok');
+    clearForm('create-po');
+    closeM('create-po');
+    refreshAll();
+  } catch(e) {
+    // If PODocumentUrl column missing, retry without it
+    if (e.message.includes('not recognized') || e.message.includes('invalid')) {
+      delete fields.PODocumentUrl;
+      const id2 = await gPost(LISTS.POs, fields).catch(e2=>{ toast('Error',e2.message,'err'); return null; });
+      if (id2) {
+        await gPatch(LISTS.Quotations, quotId, {QuotationStatus:'Selected'});
+        await gPatch(LISTS.Requests,   reqId,  {RequestStatus:'PO Created'});
+        toast('PO Created', poNum+(docUrl?' (add PODocumentUrl column to link document)':''), 'warn');
+        clearForm('create-po'); closeM('create-po'); refreshAll();
+      }
+    } else { toast('Error', e.message, 'err'); }
+  }
 }
 
 // ── Preview PO details inside Approve modal ──
@@ -2041,7 +2297,7 @@ function previewPO(poId) {
         <div><span style="color:var(--muted);font-size:11px">Expected Delivery</span><br><strong>${fD(po.ExpectedDelivery)}</strong></div>
       `;
       // Show existing PO document if already uploaded
-      const existingDoc = po.PODocumentUrl || po.PODocument;
+      const existingDoc = po.PODocumentUrl;
       docEl.innerHTML = existingDoc
         ? `<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--green)">&#9989; PO document already uploaded: ${flink(existingDoc,'View PO Document')}</div>`
         : `<div style="font-size:12px;color:var(--yellow)">&#9888; No PO document uploaded yet — please upload below</div>`;
@@ -2057,30 +2313,84 @@ function previewPO(poId) {
 }
 
 async function subApr() {
-  const poId=document.getElementById('ap-pi').value,name=document.getElementById('ap-nm').value.trim(),action=document.getElementById('ap-ac').value;
-  if(!poId||!name){toast('Validation Error','PO ID and Approver Name required','warn');return;}
+  const poId  = document.getElementById('ap-pi').value.trim();
+  const name  = document.getElementById('ap-nm').value.trim();
+  const action = document.getElementById('ap-ac').value;
+  if (!poId || !name) { toast('Validation Error','PO ID and Approver Name required','warn'); return; }
 
-  // Upload PO document first (if provided — for cases where not uploaded at PO creation)
-  let poDocUrl=null;
-  const fiPO=document.getElementById('ap-po-fl');
-  if(fiPO && fiPO.files[0]){
+  // Step 1 — Upload PO document if provided
+  let poDocUrl = null;
+  const fiPO = document.getElementById('ap-po-fl');
+  if (fiPO && fiPO.files[0]) {
     toast('Uploading','Uploading PO document...','warn');
-    poDocUrl=await uploadFile(fiPO.files[0],DOC_LIB+'/PurchaseOrders');
-    if(poDocUrl){ await gPatch(LISTS.POs,poId,{PODocumentUrl:poDocUrl,PODocument:poDocUrl}); }
+    poDocUrl = await uploadFile(fiPO.files[0], DOC_LIB+'/PurchaseOrders');
+    if (poDocUrl) {
+      try { await gPatch(LISTS.POs, poId, {PODocumentUrl: poDocUrl}); } catch(_) {}
+    }
   }
 
-  // Upload signed approval document
-  let docUrl=null;
-  const fi=document.getElementById('ap-fl');
-  if(fi.files[0]){toast('Uploading','Uploading approval document...','warn');docUrl=await uploadFile(fi.files[0],DOC_LIB+'/Approvals');}
+  // Step 2 — Upload signed approval document
+  let aprDocUrl = null;
+  const fiApr = document.getElementById('ap-fl');
+  if (fiApr && fiApr.files[0]) {
+    toast('Uploading','Uploading signed approval document...','warn');
+    aprDocUrl = await uploadFile(fiApr.files[0], DOC_LIB+'/Approvals');
+  }
+
+  // Step 3 — ALWAYS update PO status first (so dashboard always reflects change)
+  const newStatus = action === 'Approved' ? 'Approved' : action === 'Rejected' ? 'Rejected' : 'Pending Approval';
   try {
-    await gPost(LISTS.Approvals,{Title:`${action} by ${name}`,POItemId:Number(poId),ApproverName:name,ApproverEmail:document.getElementById('ap-em').value,ApprovalAction:action,ApprovalComments:document.getElementById('ap-co').value,ActionDate:new Date().toISOString(),ApprovalDocUrl:docUrl,ApprovalDoc:docUrl});
-    const ns=action==='Approved'?'Approved':'Rejected';
-    await gPatch(LISTS.POs,poId,{POStatus:ns,ApprovedBy:name,ApprovalDate:new Date().toISOString()});
-    if(action==='Approved'){try{const po=await gGetOne(LISTS.POs,poId);if(po.RequestItemId)await gPatch(LISTS.Requests,po.RequestItemId,{RequestStatus:'PO Approved'});}catch(_){}}
-    toast('Approval Recorded','PO '+action.toLowerCase()+(docUrl?' — document uploaded':''),'ok');
-    closeM('approve-po'); refreshAll();
-  } catch(e) { toast('Error',e.message,'err'); }
+    await gPatch(LISTS.POs, poId, {
+      POStatus:     newStatus,
+      ApprovedBy:   name,
+      ApprovalDate: new Date().toISOString()
+    });
+  } catch(e) {
+    toast('Error', 'Failed to update PO status: ' + e.message, 'err'); return;
+  }
+
+  // Step 4 — Create approval record (with safe retry if field not recognised)
+  const aprFields = {
+    Title:          action + ' by ' + name,
+    POItemId:       Number(poId),
+    ApproverName:   name,
+    ApprovalAction: action,
+    ActionDate:     new Date().toISOString()
+  };
+  const em  = document.getElementById('ap-em').value;  if (em)  aprFields.ApproverEmail    = em;
+  const co  = document.getElementById('ap-co').value;  if (co)  aprFields.ApprovalComments = co;
+  if (aprDocUrl) aprFields.ApprovalDocUrl = aprDocUrl;
+
+  try {
+    await gPost(LISTS.Approvals, aprFields);
+  } catch(e) {
+    if (e.message.includes('not recognized') || e.message.includes('invalid')) {
+      // Retry with minimal safe fields only
+      delete aprFields.ApprovalDocUrl;
+      delete aprFields.ApprovalComments;
+      try { await gPost(LISTS.Approvals, aprFields); } catch(_) {}
+      toast('Note','Approval saved — some optional columns missing in SharePoint','warn');
+    } else {
+      toast('Warning','PO status updated but approval record failed: ' + e.message,'warn');
+    }
+  }
+
+  // Step 5 — Update Request status if approved
+  if (action === 'Approved') {
+    try {
+      const po = await gGetOne(LISTS.POs, poId);
+      if (po && po.RequestItemId) {
+        await gPatch(LISTS.Requests, po.RequestItemId, {RequestStatus: 'PO Approved'});
+      }
+    } catch(_) {}
+  }
+
+  toast('Approval Recorded', 'PO ' + action.toLowerCase() + (aprDocUrl ? ' — document uploaded' : ''), 'ok');
+  clearForm('approve-po');
+  closeM('approve-po');
+  // Force full refresh so dashboard updates immediately
+  _rfg = false;
+  refreshAll();
 }
 
 async function subInv() {
@@ -2091,9 +2401,22 @@ async function subInv() {
   const fi=document.getElementById('iv-fl');
   if(fi.files[0]){toast('Uploading','Uploading invoice document...','warn');docUrl=await uploadFile(fi.files[0],DOC_LIB+'/Invoices');}
   try {
-    const id = await gPost(LISTS.Invoices,{Title:invNum,InvoiceNumber:invNum,POItemId:Number(poId),VendorName:document.getElementById('iv-vn').value,InvoiceDate:document.getElementById('iv-dt').value||null,DueDate:document.getElementById('iv-du').value||null,InvoiceAmount:amount,TaxAmount:tax,TotalAmount:amount+tax,PaymentStatus:'Pending',Notes:document.getElementById('iv-nt').value,InvoiceDocUrl:docUrl,InvoiceDoc:docUrl});
-    toast('Invoice Saved','#'+id+(docUrl?' with document':''),'ok');
-    closeM('add-invoice'); refreshAll();
+    const invFields = {
+      Title: invNum, InvoiceNumber: invNum,
+      POItemId: Number(poId),
+      InvoiceAmount: amount, TaxAmount: tax, TotalAmount: amount+tax,
+      PaymentStatus: 'Pending'
+    };
+    const ivn = document.getElementById('iv-vn').value; if(ivn) invFields.VendorName = ivn;
+    const ivd = document.getElementById('iv-dt').value; if(ivd) invFields.InvoiceDate = ivd;
+    const ivu = document.getElementById('iv-du').value; if(ivu) invFields.DueDate = ivu;
+    const ivnt = document.getElementById('iv-nt').value; if(ivnt) invFields.Notes = ivnt;
+    if(docUrl) invFields.InvoiceDocUrl = docUrl;
+    const id = await gPost(LISTS.Invoices, invFields);
+    toast('Invoice Saved','#'+id+(docUrl?' — document uploaded':''),'ok');
+    clearForm('add-invoice');
+    closeM('add-invoice');
+    refreshAll();
   } catch(e) { toast('Error',e.message,'err'); }
 }
 
@@ -2101,14 +2424,23 @@ async function subInv() {
 function gSearch(q){document.querySelectorAll('.view.on tbody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q.toLowerCase())?'':' none';});}
 let _rfg=false;
 function refreshAll(){
-  if(_rfg)return; _rfg=true;
-  const ic=document.getElementById('rfic'); ic.style.animation='spin .7s linear infinite';
-  const id=document.querySelector('.view.on')?.id?.replace('view-','');
-  const p=[loadDash()];
-  if(id==='requests')p.push(loadReqs());if(id==='quotations')p.push(loadQuts());
-  if(id==='purchase-orders')p.push(loadPOs());if(id==='approvals')p.push(loadAprs());
-  if(id==='invoices')p.push(loadInvs());if(id==='reports')p.push(loadRpts());
-  Promise.all(p).finally(()=>{ic.style.animation='';_rfg=false;});
+  _rfg = false; // always reset lock before starting
+  const ic=document.getElementById('rfic');
+  if(ic) ic.style.animation='spin .7s linear infinite';
+  const view = document.querySelector('.view.on');
+  const id = view ? view.id.replace('view-','') : '';
+  const allLoads = [loadDash()];
+  if(id==='requests')       allLoads.push(loadReqs());
+  if(id==='quotations')     allLoads.push(loadQuts());
+  if(id==='purchase-orders')allLoads.push(loadPOs());
+  if(id==='approvals')      allLoads.push(loadAprs());
+  if(id==='invoices')       allLoads.push(loadInvs());
+  if(id==='reports')        allLoads.push(loadRpts());
+  // always reload POs after approval even if not on that tab
+  if(id!=='purchase-orders') allLoads.push(loadDash());
+  Promise.allSettled(allLoads).finally(()=>{
+    if(ic) ic.style.animation='';
+  });
 }
 
 // ── INTERACTIVE GUIDE ──
@@ -2282,6 +2614,177 @@ async function selectQuotation(quotId, reqId, vendor, vendorEmail, unitPrice, qt
       cPO();
     }, 200);
   } catch(e) { toast('Error',e.message,'err'); }
+}
+
+
+// ═══════════════════════════════════════════════════
+// CREATE PO — QUOTATION PICKER
+// ═══════════════════════════════════════════════════
+async function loadQuotsForPO() {
+  const reqId = document.getElementById('cp-ri').value.trim();
+  if (!reqId) { toast('Missing','Enter a Request ID first','warn'); return; }
+  const listEl = document.getElementById('cp-quots-list');
+  const cardsEl = document.getElementById('cp-quots-cards');
+  listEl.style.display = 'block';
+  cardsEl.innerHTML = '<div class="ld"><div class="sp"></div><p>Loading quotations for Request #'+reqId+'...</p></div>';
+  try {
+    const quots = await gGet(LISTS.Quotations, 'fields/RequestItemId eq ' + reqId);
+    if (quots.length === 0) {
+      cardsEl.innerHTML = '<div style="text-align:center;padding:14px;color:var(--muted);font-size:13px">&#128172; No quotations found for Request #'+reqId+'.<br>Add quotations first from the Requests table.</div>';
+      return;
+    }
+    // Sort cheapest first
+    quots.sort(function(a,b){ return (a.TotalAmount||0)-(b.TotalAmount||0); });
+    cardsEl.innerHTML = '';
+    quots.forEach(function(q, i) {
+      var isSelected = q.QuotationStatus === 'Selected';
+      var card = document.createElement('div');
+      card.style.cssText = 'border:2px solid '+(i===0?'#2563EB':'var(--border)')+';border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;background:'+(isSelected?'#F0FDF4':'white')+';transition:all .18s';
+      card.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">'
+        +'<div style="display:flex;align-items:center;gap:8px">'
+        +(i===0?'<span style="font-size:16px">&#127945;</span>':'')
+        +'<strong style="font-size:13px">'+(q.VendorName||'—')+'</strong>'
+        +(isSelected?'<span class="bdg bdg-approved">&#9989; Previously Selected</span>':'')
+        +(i===0?'<span class="bdg bdg-submitted">Lowest Price</span>':'')
+        +'</div>'
+        +'<strong style="font-size:16px;color:var(--navy);font-family:Sora,sans-serif">LKR '+fmt(q.TotalAmount)+'</strong>'
+        +'</div>'
+        +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;font-size:12px">'
+        +'<div><span style="color:var(--muted)">Unit Price</span><br><strong>LKR '+fmt(q.UnitPrice)+'</strong></div>'
+        +'<div><span style="color:var(--muted)">Quantity</span><br><strong>'+(q.Quantity||'—')+'</strong></div>'
+        +'<div><span style="color:var(--muted)">Delivery</span><br><strong>'+(q.DeliveryDays?q.DeliveryDays+' days':'—')+'</strong></div>'
+        +'<div><span style="color:var(--muted)">Warranty</span><br><strong>'+(q.WarrantyPeriod||'—')+'</strong></div>'
+        +'</div>'
+        +(q.Specifications?'<div style="margin-top:6px;font-size:11.5px;color:var(--muted)">'+q.Specifications+'</div>':'')
+        +'<div style="margin-top:9px"><button class="btn btn-grn btn-sm" style="width:100%" data-qid="'+q._id+'" data-rid="'+reqId+'" data-vn="'+encodeURIComponent(q.VendorName||'')+'" data-ve="'+encodeURIComponent(q.VendorEmail||'')+'" data-up="'+(q.UnitPrice||0)+'" data-qty="'+(q.Quantity||1)+'" onclick="event.stopPropagation();pickQuotFromCard(this)">&#9989; Select This Quotation &amp; Fill PO Details</button></div>';
+      card.onmouseover = function(){ if(!card.classList.contains('picked')) card.style.background='#F8FAFC'; };
+      card.onmouseout  = function(){ if(!card.classList.contains('picked')) card.style.background='white'; };
+      cardsEl.appendChild(card);
+    });
+  } catch(e) {
+    cardsEl.innerHTML = '<div style="color:var(--red);padding:10px">&#10060; '+e.message+'</div>';
+  }
+}
+
+function pickQuotFromCard(btn) {
+  var quotId = btn.getAttribute('data-qid');
+  var reqId  = btn.getAttribute('data-rid');
+  var vendor = decodeURIComponent(btn.getAttribute('data-vn') || '');
+  var email  = decodeURIComponent(btn.getAttribute('data-ve') || '');
+  var price  = btn.getAttribute('data-up') || '0';
+  var qty    = btn.getAttribute('data-qty') || '1';
+  pickQuotForPO(quotId, reqId, vendor, email, price, qty);
+  // Highlight the selected card visually
+  document.querySelectorAll('#cp-quots-cards > div').forEach(function(c){
+    c.style.borderColor = 'var(--border)'; c.style.background = 'white';
+  });
+  var card = btn.closest('div[style*="border:2px"]');
+  if (card) { card.style.borderColor = '#059669'; card.style.background = '#F0FDF4'; }
+}
+
+function pickQuotForPO(quotId, reqId, vendor, email, price, qty) {
+  // Fill the form fields
+  document.getElementById('cp-qi').value = quotId;
+  document.getElementById('cp-vn').value = vendor;
+  document.getElementById('cp-ve').value = email;
+  document.getElementById('cp-up').value = price;
+  document.getElementById('cp-qt').value = qty;
+  cPO();
+  // Highlight selected card
+  document.querySelectorAll('#cp-quots-cards > div').forEach(function(c){ c.style.borderColor='var(--border)'; c.style.background='white'; c.classList.remove('picked'); });
+  event.currentTarget.closest('div[style*="border:2px"]') && (function(btn){
+    var card = btn.closest('div');
+    card.style.borderColor='var(--green)'; card.style.background='#F0FDF4'; card.classList.add('picked');
+  })(event.currentTarget);
+  toast('Quotation Selected','PO details filled — review and upload document below','ok');
+  // Scroll to PO details section
+  document.getElementById('cp-vn').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+// ═══════════════════════════════════════════════════
+// EDIT PO
+// ═══════════════════════════════════════════════════
+async function editPOById(poId) {
+  try {
+    const po = await gGetOne(LISTS.POs, poId);
+    document.getElementById('ep-id').value  = poId;
+    document.getElementById('ep-num').value = po.PONumber || '';
+    document.getElementById('ep-vn').value  = po.VendorName || '';
+    document.getElementById('ep-ve').value  = po.VendorEmail || '';
+    document.getElementById('ep-it').value  = po.ItemDescription || '';
+    document.getElementById('ep-qt').value  = po.Quantity || 1;
+    document.getElementById('ep-up').value  = po.UnitPrice || 0;
+    document.getElementById('ep-tx').value  = po.TaxPercent || 10;
+    document.getElementById('ep-ad').value  = po.DeliveryAddress || '';
+    document.getElementById('ep-re').value  = po.Remarks || '';
+    document.getElementById('ep-de').value  = po.ExpectedDelivery ? po.ExpectedDelivery.split('T')[0] : '';
+    // Set status dropdown
+    const stEl = document.getElementById('ep-st');
+    for (var o of stEl.options) { if (o.value === po.POStatus || o.text === po.POStatus) { stEl.value = o.value; break; } }
+    // Reset upload zone
+    document.getElementById('ep-zone').classList.remove('done');
+    document.getElementById('ep-fn').innerHTML = '';
+    const existDoc = po.PODocumentUrl || po.PODocument;
+    if (existDoc) {
+      document.getElementById('ep-fn').innerHTML = '<div style="margin-top:6px;font-size:12px;color:var(--green)">&#128206; Current: '+flink(existDoc,'View existing PO document')+'</div>';
+    }
+    cEditPO();
+    openM('edit-po');
+  } catch(e) { toast('Error', e.message, 'err'); }
+}
+
+function cEditPO() {
+  const p = Number(document.getElementById('ep-up').value)||0;
+  const q = Number(document.getElementById('ep-qt').value)||0;
+  const t = Number(document.getElementById('ep-tx').value)||0;
+  const sub = p*q, taxAmt = sub*(t/100);
+  document.getElementById('ep-sub').textContent   = 'LKR '+fmt(sub);
+  document.getElementById('ep-txamt').textContent = 'LKR '+fmt(taxAmt);
+  document.getElementById('ep-tot').textContent   = 'LKR '+fmt(sub+taxAmt);
+}
+
+async function saveEditPO() {
+  const poId  = document.getElementById('ep-id').value;
+  const vendor = document.getElementById('ep-vn').value.trim();
+  const item   = document.getElementById('ep-it').value.trim();
+  if (!vendor || !item) { toast('Validation','Vendor Name and Item Description required','warn'); return; }
+  const qty    = Number(document.getElementById('ep-qt').value)||1;
+  const price  = Number(document.getElementById('ep-up').value)||0;
+  const tax    = Number(document.getElementById('ep-tx').value)||0;
+  const sub    = qty*price, taxAmt = sub*(tax/100), total = sub+taxAmt;
+
+  // Upload new PO document if provided
+  let docUrl = null;
+  const fi = document.getElementById('ep-fl');
+  if (fi && fi.files[0]) {
+    toast('Uploading','Uploading PO document...','warn');
+    docUrl = await uploadFile(fi.files[0], DOC_LIB+'/PurchaseOrders');
+  }
+
+  const fields = {
+    VendorName: vendor,
+    VendorEmail: document.getElementById('ep-ve').value,
+    ItemDescription: item,
+    Quantity: qty,
+    UnitPrice: price,
+    SubTotal: sub,
+    TaxPercent: tax,
+    TaxAmount: taxAmt,
+    TotalAmount: total,
+    POStatus: document.getElementById('ep-st').value,
+    DeliveryAddress: document.getElementById('ep-ad').value,
+    Remarks: document.getElementById('ep-re').value
+  };
+  const de = document.getElementById('ep-de').value;
+  if (de) fields.ExpectedDelivery = de;
+  if (docUrl) { fields.PODocumentUrl = docUrl; fields.PODocument = docUrl; }
+
+  try {
+    await gPatch(LISTS.POs, poId, fields);
+    toast('PO Updated','Changes saved successfully','ok');
+    closeM('edit-po');
+    refreshAll();
+  } catch(e) { toast('Error', e.message, 'err'); }
 }
 
 </script>
