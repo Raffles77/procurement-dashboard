@@ -1002,7 +1002,7 @@ async function gPost(listId, fields) { const d = await api(`list/${listId}`,'POS
 async function gPatch(listId, id, flds) { return api(`item/${listId}/${id}`,'PATCH',flds); }
 
 // ── File upload ──
-async function uploadFile(file, folder) {
+async function uploadFile(file, folder, listId, itemId) {
   if (!file || !API) return null;
   try {
     const reader = new FileReader();
@@ -1010,16 +1010,22 @@ async function uploadFile(file, folder) {
       reader.onload = e => res(e.target.result.split(',')[1]);
       reader.readAsDataURL(file);
     });
-    const d = await api('upload', 'POST', {
-      fileName: file.name,
+    const payload = {
+      fileName:     file.name,
       base64Content: b64,
-      folderPath: folder || DOC_LIB,
-      contentType: file.type
-    });
-    return d.webUrl || d.url || file.name;
+      folderPath:   folder || DOC_LIB,
+      contentType:  file.type || 'application/octet-stream'
+    };
+    // Pass listId + itemId so worker attaches file directly to the SharePoint list item
+    if (listId) payload.listId = listId;
+    if (itemId) payload.itemId = String(itemId);
+    const d = await api('upload', 'POST', payload);
+    // Return the best available URL
+    return d.url || d.webUrl || d.attachmentUrl || null;
   } catch(e) {
-    console.warn('Upload skipped:', e.message);
-    return `[uploaded:${file.name}]`;
+    console.warn('Upload error:', e.message);
+    toast('Upload Failed', e.message, 'err');
+    return null;
   }
 }
 
@@ -1649,6 +1655,34 @@ async function loadRpts() {
 // REQUEST DETAIL MODAL — opens when View is clicked in Requests table
 // ═══════════════════════════════════════════════
 
+
+// ═══ LOAD SHAREPOINT LIST ITEM ATTACHMENTS ═══
+async function getAttachments(listId, itemId) {
+  try {
+    const d = await api('attachments/' + listId + '/' + itemId);
+    return (d.value || []).map(function(a) {
+      return {
+        name: a.name,
+        url: a.serverRelativeUrl
+          ? 'https://rafflesconsolidated.sharepoint.com' + a.serverRelativeUrl
+          : null
+      };
+    }).filter(function(a) { return a.url; });
+  } catch(e) { return []; }
+}
+
+// ═══ RENDER ATTACHMENT LIST ═══
+function renderAttachments(attachments, extraUrl) {
+  var links = [];
+  if (extraUrl && !extraUrl.startsWith('[')) links.push(flink(extraUrl, '&#128196; View Document'));
+  attachments.forEach(function(a) {
+    links.push(flink(a.url, '&#128206; ' + a.name));
+  });
+  return links.length > 0
+    ? links.join(' &nbsp; ')
+    : '<span style="color:var(--subtle);font-size:12px">No attachments</span>';
+}
+
 // ═══ QUOTATION DETAIL VIEW ═══
 async function openQuotDetail(quotId) {
   openM('po-detail');
@@ -1949,7 +1983,8 @@ async function openPOD(poId) {
     } else {
       allQ.sort(function(a,b){return (a.TotalAmount||0)-(b.TotalAmount||0);}).forEach(function(q,i){
         var isSelected = q.QuotationStatus === 'Selected';
-        var docLink = q.QuotationDocUrl ? '<div style="margin-top:8px">'+flink(q.QuotationDocUrl,'&#128172; Download Quotation Document')+'</div>' : '';
+        var quotAttachUrl = q.QuotationDocUrl || '';
+        var docLink = quotAttachUrl ? '<div style="margin-top:8px">'+flink(quotAttachUrl,'&#128172; Download Quotation Document')+'</div>' : '';
         var specHtml = q.Specifications ? '<div style="margin-top:9px;font-size:11.5px;color:var(--muted);padding:7px 10px;background:#F1F5F9;border-radius:7px;border-left:3px solid #CBD5E1">'+q.Specifications+'</div>' : '';
         quotsHtml += '<div class="qc '+(isSelected?'sel':'')+(i===0?' low':'')+'">'
           + '<div class="qct">'
@@ -2198,26 +2233,25 @@ async function subQut() {
   }
 
   try {
+    // Create the quotation list item first
     const id = await gPost(LISTS.Quotations, fields);
     await gPatch(LISTS.Requests, reqId, {RequestStatus: 'Quotation Pending'});
-    toast('Quotation Saved', '#'+id+(docUrl?' — document uploaded':''), 'ok');
+
+    // Now upload file AFTER creation — attach directly to the list item
+    if (fi && fi.files[0]) {
+      toast('Uploading','Attaching document to quotation...','warn');
+      const url = await uploadFile(fi.files[0], 'Shared Documents/Quotations', LISTS.Quotations, id);
+      if (url) {
+        // Try to save URL to list item — graceful if column doesn't exist
+        try { await gPatch(LISTS.Quotations, id, {QuotationDocUrl: url}); } catch(_) {}
+      }
+    }
+
+    toast('Quotation Saved', 'Quotation #'+id+' saved'+(fi&&fi.files[0]?' with document attached':''), 'ok');
     clearForm('add-quotation');
     closeM('add-quotation');
     refreshAll();
-  } catch(e) {
-    // If QuotationDocUrl column doesn't exist, retry without it
-    if (e.message.includes('not recognized') || e.message.includes('invalid')) {
-      delete fields.QuotationDocUrl;
-      const id2 = await gPost(LISTS.Quotations, fields).catch(e2=>{ toast('Error',e2.message,'err'); return null; });
-      if (id2) {
-        await gPatch(LISTS.Requests, reqId, {RequestStatus: 'Quotation Pending'});
-        toast('Quotation Saved', '#'+id2+(docUrl?' (doc uploaded to library, add QuotationDocUrl column to link it)':''), 'warn');
-        clearForm('add-quotation');
-        closeM('add-quotation');
-        refreshAll();
-      }
-    } else { toast('Error', e.message, 'err'); }
-  }
+  } catch(e) { toast('Error', e.message, 'err'); }
 }
 
 function genPO(){const d=new Date();return`PO-${d.getFullYear().toString().slice(-2)}${String(d.getMonth()+1).padStart(2,'0')}-${Math.floor(Math.random()*9000)+1000}`;}
@@ -2236,9 +2270,8 @@ async function subPO() {
   const sub    = qty*price, taxAmt = sub*(tax/100), total = sub+taxAmt;
   const poNum  = genPO();
 
-  let docUrl = null;
+  // File will be uploaded AFTER PO item is created
   const fi = document.getElementById('cp-fl');
-  if (fi.files[0]) { toast('Uploading','Uploading PO document...','warn'); docUrl = await uploadFile(fi.files[0], DOC_LIB+'/PurchaseOrders'); }
 
   const fields = {
     Title: poNum, PONumber: poNum,
@@ -2258,23 +2291,21 @@ async function subPO() {
     const id = await gPost(LISTS.POs, fields);
     await gPatch(LISTS.Quotations, quotId, {QuotationStatus:'Selected'});
     await gPatch(LISTS.Requests,   reqId,  {RequestStatus:'PO Created'});
-    toast('PO Created', poNum+' (ID:'+id+')'+(docUrl?' — document uploaded':''), 'ok');
+
+    // Upload PO document and attach to the list item
+    if (fi && fi.files[0]) {
+      toast('Uploading','Attaching PO document...','warn');
+      const docUrl = await uploadFile(fi.files[0], 'Shared Documents/PurchaseOrders', LISTS.POs, id);
+      if (docUrl) {
+        try { await gPatch(LISTS.POs, id, {PODocumentUrl: docUrl}); } catch(_) {}
+      }
+    }
+
+    toast('PO Created', poNum+' (ID:'+id+')'+(fi&&fi.files[0]?' — document attached':''), 'ok');
     clearForm('create-po');
     closeM('create-po');
     refreshAll();
-  } catch(e) {
-    // If PODocumentUrl column missing, retry without it
-    if (e.message.includes('not recognized') || e.message.includes('invalid')) {
-      delete fields.PODocumentUrl;
-      const id2 = await gPost(LISTS.POs, fields).catch(e2=>{ toast('Error',e2.message,'err'); return null; });
-      if (id2) {
-        await gPatch(LISTS.Quotations, quotId, {QuotationStatus:'Selected'});
-        await gPatch(LISTS.Requests,   reqId,  {RequestStatus:'PO Created'});
-        toast('PO Created', poNum+(docUrl?' (add PODocumentUrl column to link document)':''), 'warn');
-        clearForm('create-po'); closeM('create-po'); refreshAll();
-      }
-    } else { toast('Error', e.message, 'err'); }
-  }
+  } catch(e) { toast('Error', e.message, 'err'); }
 }
 
 // ── Preview PO details inside Approve modal ──
@@ -2322,8 +2353,8 @@ async function subApr() {
   let poDocUrl = null;
   const fiPO = document.getElementById('ap-po-fl');
   if (fiPO && fiPO.files[0]) {
-    toast('Uploading','Uploading PO document...','warn');
-    poDocUrl = await uploadFile(fiPO.files[0], DOC_LIB+'/PurchaseOrders');
+    toast('Uploading','Attaching PO document...','warn');
+    poDocUrl = await uploadFile(fiPO.files[0], 'Shared Documents/PurchaseOrders', LISTS.POs, poId);
     if (poDocUrl) {
       try { await gPatch(LISTS.POs, poId, {PODocumentUrl: poDocUrl}); } catch(_) {}
     }
@@ -2333,8 +2364,8 @@ async function subApr() {
   let aprDocUrl = null;
   const fiApr = document.getElementById('ap-fl');
   if (fiApr && fiApr.files[0]) {
-    toast('Uploading','Uploading signed approval document...','warn');
-    aprDocUrl = await uploadFile(fiApr.files[0], DOC_LIB+'/Approvals');
+    toast('Uploading','Attaching signed approval document...','warn');
+    aprDocUrl = await uploadFile(fiApr.files[0], 'Shared Documents/Approvals', LISTS.Approvals, null);
   }
 
   // Step 3 — ALWAYS update PO status first (so dashboard always reflects change)
@@ -2362,7 +2393,11 @@ async function subApr() {
   if (aprDocUrl) aprFields.ApprovalDocUrl = aprDocUrl;
 
   try {
-    await gPost(LISTS.Approvals, aprFields);
+    const aprId = await gPost(LISTS.Approvals, aprFields);
+    // Attach signed doc to the approval record
+    if (aprDocUrl && fiApr && fiApr.files[0]) {
+      try { await uploadFile(fiApr.files[0], 'Shared Documents/Approvals', LISTS.Approvals, aprId); } catch(_) {}
+    }
   } catch(e) {
     if (e.message.includes('not recognized') || e.message.includes('invalid')) {
       // Retry with minimal safe fields only
@@ -2399,7 +2434,7 @@ async function subInv() {
   const tax=Number(document.getElementById('iv-tx').value)||0;
   let docUrl=null;
   const fi=document.getElementById('iv-fl');
-  if(fi.files[0]){toast('Uploading','Uploading invoice document...','warn');docUrl=await uploadFile(fi.files[0],DOC_LIB+'/Invoices');}
+  // Invoice doc uploaded after item creation
   try {
     const invFields = {
       Title: invNum, InvoiceNumber: invNum,
@@ -2413,7 +2448,17 @@ async function subInv() {
     const ivnt = document.getElementById('iv-nt').value; if(ivnt) invFields.Notes = ivnt;
     if(docUrl) invFields.InvoiceDocUrl = docUrl;
     const id = await gPost(LISTS.Invoices, invFields);
-    toast('Invoice Saved','#'+id+(docUrl?' — document uploaded':''),'ok');
+
+    // Upload invoice doc and attach to list item
+    if (fi && fi.files[0]) {
+      toast('Uploading','Attaching invoice document...','warn');
+      const docUrl = await uploadFile(fi.files[0], 'Shared Documents/Invoices', LISTS.Invoices, id);
+      if (docUrl) {
+        try { await gPatch(LISTS.Invoices, id, {InvoiceDocUrl: docUrl}); } catch(_) {}
+      }
+    }
+
+    toast('Invoice Saved', '#'+id+(fi&&fi.files[0]?' — document attached':''), 'ok');
     clearForm('add-invoice');
     closeM('add-invoice');
     refreshAll();
