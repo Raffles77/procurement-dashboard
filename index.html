@@ -474,7 +474,7 @@ select.fc option{background:#FFFFFF;color:var(--txt);}
   <th style="width:85px">Delivery Days</th>
   <th style="width:80px">Warranty</th>
   <th style="width:95px">Valid Until</th>
-  <th style="width:110px">Document</th>
+  <th style="width:80px">Documents</th>
   <th style="width:95px">Status</th>
   <th style="width:90px">Actions</th>
 </tr></thead>
@@ -1500,7 +1500,7 @@ function renderPOs(items) {
         <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.ItemDescription||'—'}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px">LKR ${fmt(p.TotalAmount)}</td>
         <td style="font-size:12px">${fD(p.ExpectedDelivery)}</td>
-        <td onclick="event.stopPropagation()">${flink(p.PODocumentUrl||p.PODocument,'PO Sheet')}</td>
+        <td onclick="event.stopPropagation()"><button class="btn btn-sm" onclick="event.stopPropagation();showItemAttachments(event,'${p._id}','8f27b25a-d635-4d1a-8bca-a6411745529a')">&#128206; Docs</button></td>
         <td>${bdg(p.POStatus)}</td>
         <td style="white-space:nowrap" onclick="event.stopPropagation()">
           <button class="btn btn-sm btn-pri" onclick="openPOD('${p._id}')">Details</button>
@@ -1525,7 +1525,7 @@ async function loadAprs() {
           <td>${bdg(a.ApprovalAction)}</td>
           <td style="font-size:12px">${fD(a.ActionDate)}</td>
           <td style="color:var(--muted);font-size:12px;max-width:180px">${a.ApprovalComments||'—'}</td>
-          <td>${a.ApprovalDocUrl ? flink(a.ApprovalDocUrl,'&#128221; Signed Doc') : '—'}</td>
+          <td><button class="btn btn-sm" onclick="showItemAttachments(event,'${a._id}','8364acc6-8bd4-4792-b8b9-05021af0e852')">&#128206; Docs</button></td>
         </tr>`).join('');
   } catch(e) { tb.innerHTML=`<tr><td colspan="7" style="color:var(--red);padding:14px">&#10060; ${e.message}</td></tr>`; }
 }
@@ -1558,7 +1558,7 @@ function renderInvs(items) {
         <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(i.InvoiceAmount)}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(i.TaxAmount)}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px">LKR ${fmt(i.TotalAmount)}</td>
-        <td>${i.InvoiceDocUrl ? flink(i.InvoiceDocUrl,'&#129534; Invoice PDF') : '—'}</td>
+        <td><button class="btn btn-sm" onclick="showItemAttachments(event,'${i._id}','ca980ea2-bdb0-4ba2-98e5-915f66a140cf')">&#128206; Docs</button></td>
         <td>${bdg(i.PaymentStatus)}</td>
         <td style="white-space:nowrap">
           ${i.PaymentStatus!=='Paid'
@@ -1571,7 +1571,7 @@ function fInvs(s) { renderInvs(s?_invs.filter(i=>i.PaymentStatus===s):_invs); }
 
 async function markPaid(invId) {
   try {
-    await gPatch(LISTS.Invoices, invId, {PaymentStatus:'Paid', PaymentDate:new Date().toISOString()});
+    await gPatch(LISTS.Invoices, invId, {PaymentStatus:'Paid', PaymentDate:new Date().toISOString().split('T')[0]});
     toast('Invoice Paid','Payment recorded.','ok');
     loadInvs(); loadDash();
   } catch(e) { toast('Error',e.message,'err'); }
@@ -1655,6 +1655,102 @@ async function loadRpts() {
 // REQUEST DETAIL MODAL — opens when View is clicked in Requests table
 // ═══════════════════════════════════════════════
 
+
+
+// ═══ ATTACHMENT POPUP ═══
+let _attachPopup = null;
+async function showItemAttachments(event, itemId, listId) {
+  event.stopPropagation();
+  // Remove existing popup
+  if (_attachPopup) { _attachPopup.remove(); _attachPopup = null; }
+
+  const popup = document.createElement('div');
+  popup.style.cssText = 'position:fixed;z-index:3000;background:#fff;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.15);padding:16px;min-width:280px;max-width:400px;animation:scaleIn .15s ease';
+  popup.innerHTML = '<div style="font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">&#128206; Attachments <button onclick="this.closest(\'div\').parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)">&#10005;</button></div><div id="attach-list">Loading...</div><div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px"><label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Upload new attachment</label><input type="file" id="attach-file-input" accept=".pdf,.xlsx,.xls,.docx,.jpg,.png" style="font-size:12px;width:100%"><button class="btn btn-pri btn-sm" style="margin-top:8px;width:100%" onclick="uploadAttachmentToItem(\''+itemId+'\',\''+listId+'\')">&#128228; Upload &amp; Attach</button></div>';
+
+  // Position near the button
+  const rect = event.target.getBoundingClientRect();
+  popup.style.top  = Math.min(rect.bottom + 8, window.innerHeight - 300) + 'px';
+  popup.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 420)) + 'px';
+  document.body.appendChild(popup);
+  _attachPopup = popup;
+
+  // Load attachments
+  const attachEl = popup.querySelector('#attach-list');
+  try {
+    const attachments = await getAttachments(listId, itemId);
+    if (attachments.length === 0) {
+      attachEl.innerHTML = '<div style="color:var(--muted);font-size:12.5px;text-align:center;padding:8px">No attachments yet</div>';
+    } else {
+      attachEl.innerHTML = attachments.map(function(a) {
+        return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #F1F5F9">'
+          + '<span style="font-size:16px">'+getFileIcon(a.name)+'</span>'
+          + '<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+a.name+'</div></div>'
+          + flink(a.url, 'Open')
+          + '</div>';
+      }).join('');
+    }
+  } catch(e) {
+    attachEl.innerHTML = '<div style="color:var(--red);font-size:12px">Error: '+e.message+'</div>';
+  }
+
+  // Close on outside click
+  setTimeout(function() {
+    document.addEventListener('click', function closePopup(e) {
+      if (!popup.contains(e.target)) { popup.remove(); _attachPopup = null; document.removeEventListener('click', closePopup); }
+    });
+  }, 100);
+}
+
+function getFileIcon(name) {
+  var ext = (name||'').split('.').pop().toLowerCase();
+  if (ext==='pdf') return '&#128196;';
+  if (ext==='xlsx'||ext==='xls') return '&#128202;';
+  if (ext==='docx'||ext==='doc') return '&#128203;';
+  if (ext==='jpg'||ext==='jpeg'||ext==='png') return '&#128444;';
+  return '&#128206;';
+}
+
+async function uploadAttachmentToItem(itemId, listId) {
+  const input = document.getElementById('attach-file-input');
+  if (!input || !input.files[0]) { toast('Select File','Please choose a file first','warn'); return; }
+  const file = input.files[0];
+  toast('Uploading','Attaching '+file.name+'...','warn');
+  try {
+    const reader = new FileReader();
+    const b64 = await new Promise(function(res) {
+      reader.onload = function(e) { res(e.target.result.split(',')[1]); };
+      reader.readAsDataURL(file);
+    });
+    const d = await api('upload', 'POST', {
+      fileName:      file.name,
+      base64Content: b64,
+      contentType:   file.type || 'application/octet-stream',
+      listId:        listId,
+      itemId:        String(itemId),
+      folderPath:    'Shared Documents'
+    });
+    toast('Attached!', file.name+' attached successfully', 'ok');
+    // Refresh the popup
+    if (_attachPopup) {
+      const btn = _attachPopup.querySelector('button[onclick*="uploadAttachmentToItem"]');
+      if (btn) { btn.click(); } // hack to refresh
+    }
+    // Refresh the popup attachments list
+    const attachEl = _attachPopup && _attachPopup.querySelector('#attach-list');
+    if (attachEl) {
+      attachEl.innerHTML = 'Refreshing...';
+      const atts = await getAttachments(listId, itemId);
+      attachEl.innerHTML = atts.map(function(a) {
+        return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #F1F5F9">'
+          + '<span style="font-size:16px">'+getFileIcon(a.name)+'</span>'
+          + '<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+a.name+'</div></div>'
+          + flink(a.url, 'Open')
+          + '</div>';
+      }).join('') || '<div style="color:var(--muted);font-size:12.5px;text-align:center;padding:8px">No attachments yet</div>';
+    }
+  } catch(e) { toast('Upload Failed', e.message, 'err'); }
+}
 
 // ═══ LOAD SHAREPOINT LIST ITEM ATTACHMENTS ═══
 async function getAttachments(listId, itemId) {
@@ -2151,19 +2247,20 @@ async function subReq() {
   if(!title||!by){toast('Validation Error','Title and Requested By are required','warn');return;}
   try {
     // Build fields — only include ExpenditureType/CostCentre if columns exist in SharePoint
+    // EXACT SharePoint ProcurementRequests columns
     const reqFields = {
-      Title:title, RequestTitle:title,
-      ItemDescription:document.getElementById('nr-de').value,
-      RequestedBy:by,
-      Department:document.getElementById('nr-dp').value,
+      Title:           title,
+      RequestTitle:    title,
+      RequestedBy:     by,
+      Department:      document.getElementById('nr-dp').value,
       QuantityRequired:Number(document.getElementById('nr-qt').value)||1,
-      EstimatedBudget:Number(document.getElementById('nr-bu').value)||0,
-      Priority:document.getElementById('nr-pr').value,
-      RequestStatus:'Submitted',
-      RequiredByDate:document.getElementById('nr-dt').value||null,
-      Justification:document.getElementById('nr-ju').value
+      EstimatedBudget: Number(document.getElementById('nr-bu').value)||0,
+      Priority:        document.getElementById('nr-pr').value,
+      RequestStatus:   'Submitted'
     };
-    // Add optional columns — safe: only if user filled them
+    const de = document.getElementById('nr-de').value; if(de) reqFields.ItemDescription = de;
+    const dt = document.getElementById('nr-dt').value; if(dt) reqFields.RequiredByDate = dt;
+    const ju = document.getElementById('nr-ju').value; if(ju) reqFields.Justification = ju;
     const expType = document.getElementById('nr-exptype').value;
     const costCtr = document.getElementById('nr-cc').value;
     if(expType) reqFields.ExpenditureType = expType;
@@ -2203,7 +2300,7 @@ async function subQut() {
     docUrl = await uploadFile(fi.files[0], DOC_LIB+'/Quotations');
   }
 
-  // Use EXACT column names from SharePoint Quotations list
+  // EXACT SharePoint Quotations columns from screenshot
   const fields = {
     Title:           vendor + ' - Quote #' + reqId,
     RequestItemId:   Number(reqId),
@@ -2213,24 +2310,13 @@ async function subQut() {
     TotalAmount:     price * qty,
     QuotationStatus: 'Received'
   };
-  // Optional columns — only send if filled
-  const ve = document.getElementById('aq-ve').value;
-  if (ve) fields.VendorEmail = ve;
-  const dd = document.getElementById('aq-dd').value;
-  if (dd) fields.DeliveryDays = Number(dd);
-  const wa = document.getElementById('aq-wa').value;
-  if (wa) fields.WarrantyPeriod = wa;
-  const sp = document.getElementById('aq-sp').value;
-  if (sp) fields.Specifications = sp;
-  const vu = document.getElementById('aq-vu').value;
-  if (vu) fields.ValidUntil = vu;
-  // NOTE: No document URL column in Quotations list — file stored in SharePoint library only
-  // Store the URL in the Title as a reference note if uploaded
-  if (docUrl) {
-    // Try to save URL — requires 'QuotationDocUrl' Single Line column in SharePoint Quotations list
-    // Go to SharePoint → Quotations list → + Add column → Single line of text → Name: QuotationDocUrl
-    fields.QuotationDocUrl = docUrl;
-  }
+  const vc = document.getElementById('aq-ve').value; if(vc) fields.VendorContact = vc;
+  // VendorEmail is a separate column
+  const ve = document.getElementById('aq-ve').value; if(ve) fields.VendorEmail = ve;
+  const dd = document.getElementById('aq-dd').value; if(dd) fields.DeliveryDays = Number(dd);
+  const wa = document.getElementById('aq-wa').value; if(wa) fields.WarrantyPeriod = wa;
+  const sp = document.getElementById('aq-sp').value; if(sp) fields.Specifications = sp;
+  const vu = document.getElementById('aq-vu').value; if(vu) fields.ValidUntil = vu;
 
   try {
     // Create the quotation list item first
@@ -2273,19 +2359,26 @@ async function subPO() {
   // File will be uploaded AFTER PO item is created
   const fi = document.getElementById('cp-fl');
 
+  // EXACT SharePoint PurchaseOrders columns from screenshot
   const fields = {
-    Title: poNum, PONumber: poNum,
-    RequestItemId: Number(reqId), QuotationItemId: Number(quotId),
-    VendorName: vendor, ItemDescription: item,
-    Quantity: qty, UnitPrice: price,
-    SubTotal: sub, TaxPercent: tax, TaxAmount: taxAmt, TotalAmount: total,
-    POStatus: 'Pending Approval'
+    Title:           poNum,
+    PONumber:        poNum,
+    RequestItemId:   Number(reqId),
+    QuotationItemId: Number(quotId),
+    VendorName:      vendor,
+    ItemDescription: item,
+    Quantity:        qty,
+    UnitPrice:       price,
+    SubTotal:        sub,
+    TaxPercent:      tax,
+    TaxAmount:       taxAmt,
+    TotalAmount:     total,
+    POStatus:        'Pending Approval'
   };
-  const ve = document.getElementById('cp-ve').value;   if (ve) fields.VendorEmail = ve;
-  const ad = document.getElementById('cp-ad').value;   if (ad) fields.DeliveryAddress = ad;
-  const de = document.getElementById('cp-de').value;   if (de) fields.ExpectedDelivery = de;
-  const re = document.getElementById('cp-re').value;   if (re) fields.Remarks = re;
-  if (docUrl) fields.PODocumentUrl = docUrl;
+  const ve = document.getElementById('cp-ve').value; if(ve) { fields.VendorEmail=ve; fields.VendorAddress=ve; }
+  const ad = document.getElementById('cp-ad').value; if(ad) fields.DeliveryAddress = ad;
+  const de = document.getElementById('cp-de').value; if(de) fields.ExpectedDelivery = de;
+  const re = document.getElementById('cp-re').value; if(re) fields.Remarks = re;
 
   try {
     const id = await gPost(LISTS.POs, fields);
@@ -2381,16 +2474,16 @@ async function subApr() {
   }
 
   // Step 4 — Create approval record (with safe retry if field not recognised)
+  // EXACT SharePoint POApprovals columns from screenshot
   const aprFields = {
     Title:          action + ' by ' + name,
     POItemId:       Number(poId),
     ApproverName:   name,
     ApprovalAction: action,
-    ActionDate:     new Date().toISOString()
+    ActionDate:     new Date().toISOString().split('T')[0]
   };
-  const em  = document.getElementById('ap-em').value;  if (em)  aprFields.ApproverEmail    = em;
-  const co  = document.getElementById('ap-co').value;  if (co)  aprFields.ApprovalComments = co;
-  if (aprDocUrl) aprFields.ApprovalDocUrl = aprDocUrl;
+  const em = document.getElementById('ap-em').value; if(em) aprFields.ApproverEmail    = em;
+  const co = document.getElementById('ap-co').value; if(co) aprFields.ApprovalComments = co;
 
   try {
     const aprId = await gPost(LISTS.Approvals, aprFields);
@@ -2436,17 +2529,20 @@ async function subInv() {
   const fi=document.getElementById('iv-fl');
   // Invoice doc uploaded after item creation
   try {
+    // EXACT SharePoint Invoices columns from screenshot
     const invFields = {
-      Title: invNum, InvoiceNumber: invNum,
-      POItemId: Number(poId),
-      InvoiceAmount: amount, TaxAmount: tax, TotalAmount: amount+tax,
+      Title:         invNum,
+      InvoiceNumber: invNum,
+      POItemId:      Number(poId),
+      InvoiceAmount: amount,
+      TaxAmount:     tax,
+      TotalAmount:   amount + tax,
       PaymentStatus: 'Pending'
     };
-    const ivn = document.getElementById('iv-vn').value; if(ivn) invFields.VendorName = ivn;
-    const ivd = document.getElementById('iv-dt').value; if(ivd) invFields.InvoiceDate = ivd;
-    const ivu = document.getElementById('iv-du').value; if(ivu) invFields.DueDate = ivu;
-    const ivnt = document.getElementById('iv-nt').value; if(ivnt) invFields.Notes = ivnt;
-    if(docUrl) invFields.InvoiceDocUrl = docUrl;
+    const ivn  = document.getElementById('iv-vn').value;  if(ivn)  invFields.VendorName  = ivn;
+    const ivd  = document.getElementById('iv-dt').value;  if(ivd)  invFields.InvoiceDate  = ivd;
+    const ivu  = document.getElementById('iv-du').value;  if(ivu)  invFields.DueDate      = ivu;
+    const ivnt = document.getElementById('iv-nt').value;  if(ivnt) invFields.Notes        = ivnt;
     const id = await gPost(LISTS.Invoices, invFields);
 
     // Upload invoice doc and attach to list item
@@ -2565,23 +2661,22 @@ async function saveEditReq() {
   const title = document.getElementById('er-ti').value.trim();
   const by = document.getElementById('er-by').value.trim();
   if(!title||!by){toast('Validation Error','Title and Requested By are required','warn');return;}
+  // EXACT SharePoint ProcurementRequests columns
   const fields = {
-    Title: title, RequestTitle: title,
-    ItemDescription: document.getElementById('er-de').value,
-    RequestedBy: by,
-    Department: document.getElementById('er-dp').value,
+    Title:            title,
+    RequestTitle:     title,
+    RequestedBy:      by,
+    Department:       document.getElementById('er-dp').value,
     QuantityRequired: Number(document.getElementById('er-qt').value)||1,
-    EstimatedBudget: Number(document.getElementById('er-bu').value)||0,
-    Priority: document.getElementById('er-pr').value,
-    RequestStatus: document.getElementById('er-st').value,
-    Justification: document.getElementById('er-ju').value
+    EstimatedBudget:  Number(document.getElementById('er-bu').value)||0,
+    Priority:         document.getElementById('er-pr').value,
+    RequestStatus:    document.getElementById('er-st').value
   };
-  const reqDate = document.getElementById('er-dt').value;
-  if(reqDate) fields.RequiredByDate = reqDate;
-  const expType = document.getElementById('er-exptype').value;
-  const costCtr = document.getElementById('er-cc').value;
-  if(expType) fields.ExpenditureType = expType;
-  if(costCtr) fields.CostCentre = costCtr;
+  const erDe = document.getElementById('er-de').value; if(erDe) fields.ItemDescription = erDe;
+  const erDt = document.getElementById('er-dt').value; if(erDt) fields.RequiredByDate  = erDt;
+  const erJu = document.getElementById('er-ju').value; if(erJu) fields.Justification   = erJu;
+  const expType = document.getElementById('er-exptype').value; if(expType) fields.ExpenditureType = expType;
+  const costCtr = document.getElementById('er-cc').value;      if(costCtr) fields.CostCentre      = costCtr;
   try {
     await gPatch(LISTS.Requests, id, fields);
     toast('Request Updated','Changes saved successfully','ok');
@@ -2806,23 +2901,22 @@ async function saveEditPO() {
     docUrl = await uploadFile(fi.files[0], DOC_LIB+'/PurchaseOrders');
   }
 
+  // EXACT SharePoint PurchaseOrders columns
   const fields = {
-    VendorName: vendor,
-    VendorEmail: document.getElementById('ep-ve').value,
+    VendorName:  vendor,
     ItemDescription: item,
-    Quantity: qty,
-    UnitPrice: price,
-    SubTotal: sub,
-    TaxPercent: tax,
-    TaxAmount: taxAmt,
+    Quantity:    qty,
+    UnitPrice:   price,
+    SubTotal:    sub,
+    TaxPercent:  tax,
+    TaxAmount:   taxAmt,
     TotalAmount: total,
-    POStatus: document.getElementById('ep-st').value,
-    DeliveryAddress: document.getElementById('ep-ad').value,
-    Remarks: document.getElementById('ep-re').value
+    POStatus:    document.getElementById('ep-st').value
   };
-  const de = document.getElementById('ep-de').value;
-  if (de) fields.ExpectedDelivery = de;
-  if (docUrl) { fields.PODocumentUrl = docUrl; fields.PODocument = docUrl; }
+  const epVe = document.getElementById('ep-ve').value; if(epVe) { fields.VendorEmail=epVe; fields.VendorAddress=epVe; }
+  const epAd = document.getElementById('ep-ad').value; if(epAd) fields.DeliveryAddress = epAd;
+  const epRe = document.getElementById('ep-re').value; if(epRe) fields.Remarks         = epRe;
+  const epDe = document.getElementById('ep-de').value; if(epDe) fields.ExpectedDelivery = epDe;
 
   try {
     await gPatch(LISTS.POs, poId, fields);
