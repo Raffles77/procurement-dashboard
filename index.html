@@ -578,7 +578,7 @@ select.fc option{background:#FFFFFF;color:var(--txt);}
     <div class="g2">
       <div class="card"><div class="ch"><div class="ct">&#9729; API URL (Cloudflare Worker)</div></div>
         <div class="cb">
-          <div class="fg"><label class="fl">Worker URL <span class="req">*</span></label><input class="fc" id="cfg-url" placeholder="https://procurement-api.YOUR-NAME.workers.dev"><div class="fhint">From Cloudflare Workers dashboard after deployment (100% free)</div></div>
+          <div class="fg"><label class="fl">Worker URL <span class="req">*</span></label><input class="fc" id="cfg-url" placeholder="https://procurement-api.rafflesit19.workers.dev"><div class="fhint">From Cloudflare Workers dashboard after deployment (100% free)</div></div>
           <button class="btn btn-pri" onclick="addRip(event);saveURL()">Save &amp; Test Connection</button>
           <div id="conn-res" style="margin-top:12px;font-size:12.5px;"></div>
         </div>
@@ -710,7 +710,7 @@ git push origin main</div>
     <div class="fr"><div class="fg"><label class="fl">Delivery (Days)</label><input class="fc" id="aq-dd" type="number" placeholder="7"></div><div class="fg"><label class="fl">Warranty Period</label><input class="fc" id="aq-wa" placeholder="e.g. 2 years"></div></div>
     <div class="fr"><div class="fg"><label class="fl">Valid Until</label><input class="fc" id="aq-vu" type="date"></div><div class="fg"><label class="fl">Specifications</label><input class="fc" id="aq-sp" placeholder="Technical details"></div></div>
     <div class="fg">
-      <label class="fl">&#128206; Quotation Document (PDF / Excel) <span style="color:var(--blue);font-size:10px;text-transform:none;letter-spacing:0;font-weight:600">Recommended</span></label>
+      <label class="fl">&#128206; Quotation Document (PDF / Excel / Word) <span style="color:var(--red);font-size:10px;text-transform:none;letter-spacing:0;font-weight:700">Upload here — saves to SharePoint</span></label>
       <div class="upz" id="aq-zone" onclick="document.getElementById('aq-fl').click()">
         <input type="file" id="aq-fl" accept=".pdf,.xlsx,.xls,.docx" onchange="hFile(this,'aq-fn','aq-zone')">
         <div class="uz-ic">&#128196;</div>
@@ -951,6 +951,15 @@ git push origin main</div>
 // CONFIGURATION — enter your Cloudflare Worker URL
 // in the Settings tab after deployment
 // ═══════════════════════════════════════════════════
+// Version stamp — change this when List IDs change to force localStorage clear
+const APP_VERSION = 'v2-ProcurementNew-2026';
+if (localStorage.getItem('pf_version') !== APP_VERSION) {
+  const savedUrl = localStorage.getItem('pf_api_url'); // keep the URL
+  localStorage.clear();
+  if (savedUrl) localStorage.setItem('pf_api_url', savedUrl);
+  localStorage.setItem('pf_version', APP_VERSION);
+  console.log('Cache cleared for new site:', APP_VERSION);
+}
 let API = localStorage.getItem('pf_api_url') || '';
 
 // ─── Template helpers to avoid triple-nested template literals ───
@@ -959,11 +968,11 @@ function mkCls(val, yes, no) { return val===yes ? no : ''; }
 
 
 const LISTS = {
-  Requests:   '6e83b607-300e-4a91-b5f4-81addf2419b2',
-  Quotations: '264642ba-bcf9-48da-b24d-71606ff15b4c',
-  POs:        '8f27b25a-d635-4d1a-8bca-a6411745529a',
-  Approvals:  '8364acc6-8bd4-4792-b8b9-05021af0e852',
-  Invoices:   'ca980ea2-bdb0-4ba2-98e5-915f66a140cf'
+  Requests:   '3725d8dc-e33a-4912-b2d7-a0849b11e86c',
+  Quotations: '34e6bf18-5bdd-40b3-bf30-8a3d3a796cf7',
+  POs:        '3bbc1395-2896-41c4-8c0b-bf06fa2861cb',
+  Approvals:  'db6c1fe6-c2d8-423b-b665-9b6c58f05d6a',
+  Invoices:   'a2f65b1c-ba8a-43a2-b3bd-4c49789faab1'
 };
 const DOC_LIB = 'PODocuments';
 
@@ -1001,29 +1010,92 @@ async function gGetOne(listId, id) {
 async function gPost(listId, fields) { const d = await api(`list/${listId}`,'POST',{fields}); return d.id; }
 async function gPatch(listId, id, flds) { return api(`item/${listId}/${id}`,'PATCH',flds); }
 
+// Safe POST — automatically retries removing unrecognized fields
+async function gPostSafe(listId, fields) {
+  const fieldKeys = Object.keys(fields);
+  // Always keep Title
+  const required = ['Title'];
+  let current = { ...fields };
+  
+  for (let attempt = 0; attempt < fieldKeys.length; attempt++) {
+    try {
+      return await gPost(listId, current);
+    } catch(e) {
+      const msg = e.message || '';
+      if (msg.includes('not recognized') || msg.includes('Invalid') || msg.includes('does not exist') || msg.includes('cannot be set')) {
+        // Extract field name from error message if possible
+        const match = msg.match(/Field '([^']+)'/i) || msg.match(/"([^"]+)" is not/i);
+        if (match && match[1] && match[1] !== 'Title') {
+          console.warn('Removing unrecognized field:', match[1]);
+          delete current[match[1]];
+          delete current[match[1].toLowerCase()];
+        } else {
+          // Remove last added optional field
+          const optionals = fieldKeys.filter(k => !required.includes(k));
+          if (optionals.length > 0) {
+            const toRemove = optionals[optionals.length - 1 - attempt];
+            if (toRemove) { console.warn('Removing field:', toRemove); delete current[toRemove]; }
+            else throw e;
+          } else throw e;
+        }
+      } else throw e;
+    }
+  }
+  throw new Error('Could not save — too many unrecognized fields');
+}
+
 // ── File upload ──
+// ── Read file as base64 ──
+function readFileB64(file) {
+  return new Promise(function(res, rej) {
+    const reader = new FileReader();
+    reader.onload  = function(e) { res(e.target.result.split(',')[1]); };
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── Upload file: saves to SharePoint library AND attaches to list item ──
 async function uploadFile(file, folder, listId, itemId) {
   if (!file || !API) return null;
   try {
-    const reader = new FileReader();
-    const b64 = await new Promise(res => {
-      reader.onload = e => res(e.target.result.split(',')[1]);
-      reader.readAsDataURL(file);
-    });
-    const payload = {
-      fileName:     file.name,
-      base64Content: b64,
-      folderPath:   folder || DOC_LIB,
-      contentType:  file.type || 'application/octet-stream'
-    };
-    // Pass listId + itemId so worker attaches file directly to the SharePoint list item
-    if (listId) payload.listId = listId;
-    if (itemId) payload.itemId = String(itemId);
-    const d = await api('upload', 'POST', payload);
-    // Return the best available URL
-    return d.url || d.webUrl || d.attachmentUrl || null;
+    const b64         = await readFileB64(file);
+    const contentType = file.type || 'application/octet-stream';
+    let   resultUrl   = null;
+
+    // STEP 1 — Save to SharePoint document library (always done)
+    try {
+      const libRes = await api('upload', 'POST', {
+        fileName:      file.name,
+        base64Content: b64,
+        contentType:   contentType,
+        folderPath:    folder || 'Shared Documents'
+      });
+      resultUrl = libRes.webUrl || libRes.url || null;
+      if (resultUrl) console.log('Library upload OK:', resultUrl);
+    } catch(e) {
+      console.warn('Library upload failed:', e.message);
+    }
+
+    // STEP 2 — Attach to list item so it shows in SharePoint list view
+    if (listId && itemId) {
+      try {
+        const attRes = await api('attach/' + listId + '/' + itemId, 'POST', {
+          fileName:      file.name,
+          base64Content: b64,
+          contentType:   contentType
+        });
+        // Use attachment URL if library upload failed
+        if (!resultUrl && attRes.url) resultUrl = attRes.url;
+        if (attRes.success) console.log('List attachment OK:', attRes.name);
+      } catch(e) {
+        console.warn('List attachment failed:', e.message);
+      }
+    }
+
+    return resultUrl;
   } catch(e) {
-    console.warn('Upload error:', e.message);
+    console.error('uploadFile error:', e.message);
     toast('Upload Failed', e.message, 'err');
     return null;
   }
@@ -1060,7 +1132,7 @@ async function testConn() {
       : e.message.includes("NetworkError") || e.message.includes("Failed to fetch")
       ? ' — Check the Worker URL is correct'
       : '';
-    document.getElementById('conn-res').innerHTML = `<span style="color:var(--red)">&#10060; ${e.message}${hint}</span>`;
+    document.getElementById('conn-res').innerHTML = `<span style="color:var(--red)">&#10060; ${e.message}${hint}</span><br><span style="font-size:11px;color:var(--muted)">Worker URL: ${API}</span>`;
     toast('Connection Failed', e.message, 'err');
   }
 }
@@ -1500,7 +1572,7 @@ function renderPOs(items) {
         <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.ItemDescription||'—'}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px">LKR ${fmt(p.TotalAmount)}</td>
         <td style="font-size:12px">${fD(p.ExpectedDelivery)}</td>
-        <td onclick="event.stopPropagation()"><button class="btn btn-sm" onclick="event.stopPropagation();showItemAttachments(event,'${p._id}','8f27b25a-d635-4d1a-8bca-a6411745529a')">&#128206; Docs</button></td>
+        <td onclick="event.stopPropagation()"><button class="btn btn-sm" onclick="event.stopPropagation();showItemAttachments(event,'${p._id}','3bbc1395-2896-41c4-8c0b-bf06fa2861cb')">&#128206; Docs</button></td>
         <td>${bdg(p.POStatus)}</td>
         <td style="white-space:nowrap" onclick="event.stopPropagation()">
           <button class="btn btn-sm btn-pri" onclick="openPOD('${p._id}')">Details</button>
@@ -1525,7 +1597,7 @@ async function loadAprs() {
           <td>${bdg(a.ApprovalAction)}</td>
           <td style="font-size:12px">${fD(a.ActionDate)}</td>
           <td style="color:var(--muted);font-size:12px;max-width:180px">${a.ApprovalComments||'—'}</td>
-          <td><button class="btn btn-sm" onclick="showItemAttachments(event,'${a._id}','8364acc6-8bd4-4792-b8b9-05021af0e852')">&#128206; Docs</button></td>
+          <td><button class="btn btn-sm" onclick="showItemAttachments(event,'${a._id}','db6c1fe6-c2d8-423b-b665-9b6c58f05d6a')">&#128206; Docs</button></td>
         </tr>`).join('');
   } catch(e) { tb.innerHTML=`<tr><td colspan="7" style="color:var(--red);padding:14px">&#10060; ${e.message}</td></tr>`; }
 }
@@ -1558,7 +1630,7 @@ function renderInvs(items) {
         <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(i.InvoiceAmount)}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:12px">LKR ${fmt(i.TaxAmount)}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px">LKR ${fmt(i.TotalAmount)}</td>
-        <td><button class="btn btn-sm" onclick="showItemAttachments(event,'${i._id}','ca980ea2-bdb0-4ba2-98e5-915f66a140cf')">&#128206; Docs</button></td>
+        <td><button class="btn btn-sm" onclick="showItemAttachments(event,'${i._id}','a2f65b1c-ba8a-43a2-b3bd-4c49789faab1')">&#128206; Docs</button></td>
         <td>${bdg(i.PaymentStatus)}</td>
         <td style="white-space:nowrap">
           ${i.PaymentStatus!=='Paid'
@@ -1717,20 +1789,16 @@ async function uploadAttachmentToItem(itemId, listId) {
   const file = input.files[0];
   toast('Uploading','Attaching '+file.name+'...','warn');
   try {
-    const reader = new FileReader();
-    const b64 = await new Promise(function(res) {
-      reader.onload = function(e) { res(e.target.result.split(',')[1]); };
-      reader.readAsDataURL(file);
+    const b64 = await readFileB64(file);
+    const ct  = file.type || 'application/octet-stream';
+
+    // 1. Attach to list item
+    await api('attach/' + listId + '/' + itemId, 'POST', {
+      fileName: file.name, base64Content: b64, contentType: ct
     });
-    const d = await api('upload', 'POST', {
-      fileName:      file.name,
-      base64Content: b64,
-      contentType:   file.type || 'application/octet-stream',
-      listId:        listId,
-      itemId:        String(itemId),
-      folderPath:    'Shared Documents'
-    });
-    toast('Attached!', file.name+' attached successfully', 'ok');
+    // 2. Also save to library
+    api('upload', 'POST', { fileName: file.name, base64Content: b64, contentType: ct, folderPath: 'Shared Documents' }).catch(()=>{});
+    toast('Attached!', file.name + ' attached to SharePoint list item', 'ok');
     // Refresh the popup
     if (_attachPopup) {
       const btn = _attachPopup.querySelector('button[onclick*="uploadAttachmentToItem"]');
@@ -1754,17 +1822,20 @@ async function uploadAttachmentToItem(itemId, listId) {
 
 // ═══ LOAD SHAREPOINT LIST ITEM ATTACHMENTS ═══
 async function getAttachments(listId, itemId) {
+  if (!listId || !itemId) return [];
   try {
     const d = await api('attachments/' + listId + '/' + itemId);
-    return (d.value || []).map(function(a) {
-      return {
-        name: a.name,
-        url: a.serverRelativeUrl
-          ? 'https://rafflesconsolidated.sharepoint.com' + a.serverRelativeUrl
-          : null
-      };
+    const items = d.value || [];
+    return items.map(function(a) {
+      // Build URL from serverRelativeUrl or absoluteUrl
+      var url = a.absoluteUrl
+        || (a.serverRelativeUrl ? 'https://rafflesconsolidated.sharepoint.com' + a.serverRelativeUrl : null);
+      return { name: a.name || 'Attachment', url: url };
     }).filter(function(a) { return a.url; });
-  } catch(e) { return []; }
+  } catch(e) {
+    console.warn('getAttachments error:', e.message);
+    return [];
+  }
 }
 
 // ═══ RENDER ATTACHMENT LIST ═══
@@ -2266,18 +2337,34 @@ async function subReq() {
     if(expType) reqFields.ExpenditureType = expType;
     if(costCtr) reqFields.CostCentre = costCtr;
 
+    // Smart retry — removes unrecognized fields one by one until it works
     let id;
-    try {
-      id = await gPost(LISTS.Requests, reqFields);
-    } catch(e) {
-      // If ExpenditureType/CostCentre columns don't exist, retry without them
-      if(e.message.includes('not recognized') || e.message.includes('invalid')) {
-        delete reqFields.ExpenditureType;
-        delete reqFields.CostCentre;
-        id = await gPost(LISTS.Requests, reqFields);
-        toast('Note','ExpenditureType/CostCentre columns not found in SharePoint — saved without them. Add columns to enable.','warn');
-      } else { throw e; }
+    const optionalFields = ['ExpenditureType','CostCentre','Department','Priority','RequiredByDate','Justification','ItemDescription'];
+    let lastErr = null;
+    for (let attempt = 0; attempt <= optionalFields.length; attempt++) {
+      try {
+        id = await gPostSafe(LISTS.Requests, reqFields);
+        if (attempt > 0) toast('Note', 'Saved without some columns — add them to SharePoint to enable all features', 'warn');
+        break;
+      } catch(e) {
+        lastErr = e;
+        const msg = e.message || '';
+        if (msg.includes('not recognized') || msg.includes('Invalid') || msg.includes('does not exist')) {
+          // Find which field caused the error and remove it
+          let removed = false;
+          for (const f of optionalFields) {
+            if (msg.includes(f) || (!removed && f in reqFields)) {
+              console.warn('Removing field:', f, '— Error:', msg);
+              delete reqFields[f];
+              removed = true;
+              break;
+            }
+          }
+          if (!removed) { toast('Error', msg, 'err'); return; }
+        } else { throw e; }
+      }
     }
+    if (!id) { toast('Error', lastErr?.message || 'Could not save request', 'err'); return; }
     toast('Request Submitted','Request #'+id+' created.','ok');
     clearForm('new-request');
     closeM('new-request');
@@ -2318,9 +2405,27 @@ async function subQut() {
   const sp = document.getElementById('aq-sp').value; if(sp) fields.Specifications = sp;
   const vu = document.getElementById('aq-vu').value; if(vu) fields.ValidUntil = vu;
 
+  // Smart retry for quotation fields
+  const qutOptional = ['QuotationStatus','VendorEmail','VendorContact','DeliveryDays','WarrantyPeriod','Specifications','ValidUntil','QuotationDocUrl'];
+  let id_q, qLastErr;
+  for (let attempt = 0; attempt <= qutOptional.length; attempt++) {
+    try { id_q = await gPost(LISTS.Quotations, fields); break; }
+    catch(e) {
+      qLastErr = e;
+      const msg = e.message||'';
+      if (msg.includes('not recognized')||msg.includes('Invalid')||msg.includes('does not exist')) {
+        let removed = false;
+        for (const f of qutOptional) {
+          if (msg.includes(f)||(!removed && f in fields)) { delete fields[f]; removed=true; break; }
+        }
+        if (!removed) { toast('Error',msg,'err'); return; }
+      } else { toast('Error',e.message,'err'); return; }
+    }
+  }
+  if (!id_q) { toast('Error',qLastErr?.message||'Save failed','err'); return; }
   try {
-    // Create the quotation list item first
-    const id = await gPost(LISTS.Quotations, fields);
+    // Create the quotation list item first — id_q already set above
+    const id = id_q;
     await gPatch(LISTS.Requests, reqId, {RequestStatus: 'Quotation Pending'});
 
     // Now upload file AFTER creation — attach directly to the list item
@@ -2381,7 +2486,7 @@ async function subPO() {
   const re = document.getElementById('cp-re').value; if(re) fields.Remarks = re;
 
   try {
-    const id = await gPost(LISTS.POs, fields);
+    const id = await gPostSafe(LISTS.POs, fields);
     await gPatch(LISTS.Quotations, quotId, {QuotationStatus:'Selected'});
     await gPatch(LISTS.Requests,   reqId,  {RequestStatus:'PO Created'});
 
@@ -2486,7 +2591,7 @@ async function subApr() {
   const co = document.getElementById('ap-co').value; if(co) aprFields.ApprovalComments = co;
 
   try {
-    const aprId = await gPost(LISTS.Approvals, aprFields);
+    const aprId = await gPostSafe(LISTS.Approvals, aprFields);
     // Attach signed doc to the approval record
     if (aprDocUrl && fiApr && fiApr.files[0]) {
       try { await uploadFile(fiApr.files[0], 'Shared Documents/Approvals', LISTS.Approvals, aprId); } catch(_) {}
@@ -2543,7 +2648,7 @@ async function subInv() {
     const ivd  = document.getElementById('iv-dt').value;  if(ivd)  invFields.InvoiceDate  = ivd;
     const ivu  = document.getElementById('iv-du').value;  if(ivu)  invFields.DueDate      = ivu;
     const ivnt = document.getElementById('iv-nt').value;  if(ivnt) invFields.Notes        = ivnt;
-    const id = await gPost(LISTS.Invoices, invFields);
+    const id = await gPostSafe(LISTS.Invoices, invFields);
 
     // Upload invoice doc and attach to list item
     if (fi && fi.files[0]) {
