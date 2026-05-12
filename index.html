@@ -6,6 +6,7 @@
 <title>ProcureFlow Pro — Raffles Consolidated</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
   /* ── Light/White Mixed Theme ── */
@@ -731,7 +732,7 @@ git push origin main</div>
 
     <!-- Step 1: Enter Request ID to load quotations -->
     <div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:10px;padding:13px 16px;margin-bottom:15px">
-      <div style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px">&#9312; Select Request &amp; Quotation</div>
+      <div style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px">&#9312; Select Request &amp; Quotation <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(optional — loads vendor details automatically)</span></div>
       <div class="fr">
         <div class="fg" style="margin-bottom:0">
           <label class="fl">Request ID <span class="req">*</span></label>
@@ -743,7 +744,7 @@ git push origin main</div>
         </div>
         <div class="fg" style="margin-bottom:0">
           <label class="fl">Quotation ID <span class="req">*</span></label>
-          <input class="fc" id="cp-qi" type="number" placeholder="Auto-filled when you select a quote" readonly style="background:#F8FAFC">
+          <input class="fc" id="cp-qi" type="number" placeholder="Auto-filled or enter manually">
         </div>
       </div>
       <!-- Quotation picker cards -->
@@ -753,8 +754,20 @@ git push origin main</div>
       </div>
     </div>
 
-    <!-- Step 2: PO Details (auto-filled from selected quote) -->
-    <div style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">&#9313; PO Details</div>
+    <!-- Upload PO Excel to auto-fill form -->
+    <div style="background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:10px;padding:13px 16px;margin-bottom:15px">
+      <div style="font-size:10px;font-weight:700;color:#065F46;text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px">&#9313; Auto-Fill from PO Excel Template <span style="color:#059669;font-weight:400;text-transform:none;letter-spacing:0">(upload your PO sheet to fill the form automatically)</span></div>
+      <div class="upz" id="po-excel-zone" onclick="document.getElementById('po-excel-fl').click()" style="padding:14px;background:white">
+        <input type="file" id="po-excel-fl" accept=".xlsx,.xls" onchange="parsePOExcel(this)">
+        <div class="uz-ic" style="font-size:22px">&#128202;</div>
+        <div class="uz-ti">Upload PO Excel Template to auto-fill form</div>
+        <div class="uz-su">Reads: TO (Vendor), Description, QTY, Unit Price, Grand Total</div>
+        <div id="po-excel-fn"></div>
+      </div>
+    </div>
+
+    <!-- Step 3: PO Details (auto-filled from selected quote or Excel) -->
+    <div style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">&#9314; PO Details</div>
     <div class="fr"><div class="fg"><label class="fl">Vendor Name <span class="req">*</span></label><input class="fc" id="cp-vn"></div><div class="fg"><label class="fl">Vendor Email</label><input class="fc" id="cp-ve"></div></div>
     <div class="fg"><label class="fl">Item Description <span class="req">*</span></label><input class="fc" id="cp-it"></div>
     <div class="fr"><div class="fg"><label class="fl">Quantity <span class="req">*</span></label><input class="fc" id="cp-qt" type="number" value="1" oninput="cPO()"></div><div class="fg"><label class="fl">Unit Price (LKR) <span class="req">*</span></label><input class="fc" id="cp-up" type="number" placeholder="0" oninput="cPO()"></div></div>
@@ -1010,38 +1023,50 @@ async function gGetOne(listId, id) {
 async function gPost(listId, fields) { const d = await api(`list/${listId}`,'POST',{fields}); return d.id; }
 async function gPatch(listId, id, flds) { return api(`item/${listId}/${id}`,'PATCH',flds); }
 
-// Safe POST — automatically retries removing unrecognized fields
+// Safe POST — automatically retries removing unrecognized fields one by one
 async function gPostSafe(listId, fields) {
-  const fieldKeys = Object.keys(fields);
-  // Always keep Title
-  const required = ['Title'];
   let current = { ...fields };
-  
-  for (let attempt = 0; attempt < fieldKeys.length; attempt++) {
+  const maxAttempts = Object.keys(fields).length;
+
+  for (let attempt = 0; attempt <= maxAttempts; attempt++) {
     try {
-      return await gPost(listId, current);
+      const result = await gPost(listId, current);
+      if (attempt > 0) {
+        console.warn('Saved after removing', attempt, 'unrecognized fields');
+      }
+      return result;
     } catch(e) {
-      const msg = e.message || '';
-      if (msg.includes('not recognized') || msg.includes('Invalid') || msg.includes('does not exist') || msg.includes('cannot be set')) {
-        // Extract field name from error message if possible
-        const match = msg.match(/Field '([^']+)'/i) || msg.match(/"([^"]+)" is not/i);
-        if (match && match[1] && match[1] !== 'Title') {
-          console.warn('Removing unrecognized field:', match[1]);
-          delete current[match[1]];
-          delete current[match[1].toLowerCase()];
-        } else {
-          // Remove last added optional field
-          const optionals = fieldKeys.filter(k => !required.includes(k));
-          if (optionals.length > 0) {
-            const toRemove = optionals[optionals.length - 1 - attempt];
-            if (toRemove) { console.warn('Removing field:', toRemove); delete current[toRemove]; }
-            else throw e;
-          } else throw e;
-        }
-      } else throw e;
+      const msg = (e.message || '').toString();
+      // Check if error is about unrecognized/invalid field
+      const isFieldError = msg.includes('not recognized')
+        || msg.includes('Invalid')
+        || msg.includes('does not exist')
+        || msg.includes('cannot be set')
+        || msg.includes('is not a valid')
+        || msg.includes('400');
+
+      if (!isFieldError) throw e; // real error, don't retry
+
+      // Try to extract field name from error message
+      // Graph API returns: "Field 'FieldName' is not recognized"
+      const match = msg.match(/Field '([^']+)'/i)
+                 || msg.match(/'([^']+)' is not/i)
+                 || msg.match(/"([^"]+)" is not/i);
+
+      if (match && match[1] && match[1] !== 'Title' && current[match[1]] !== undefined) {
+        console.warn('Removing field by name:', match[1]);
+        delete current[match[1]];
+      } else {
+        // No field name in error — remove last non-Title field
+        const removable = Object.keys(current).filter(k => k !== 'Title');
+        if (removable.length === 0) throw e;
+        const toRemove = removable[removable.length - 1];
+        console.warn('Removing last field:', toRemove);
+        delete current[toRemove];
+      }
     }
   }
-  throw new Error('Could not save — too many unrecognized fields');
+  throw new Error('Could not save — all optional fields rejected by SharePoint');
 }
 
 // ── File upload ──
@@ -1867,12 +1892,17 @@ async function openQuotDetail(quotId) {
         + '<strong style="text-align:right;max-width:60%">'+val+'</strong></div>';
     }
 
-    var docHtml = q.QuotationDocUrl
+    // Load SharePoint list item attachments
+    var spAttachments = await getAttachments(LISTS.Quotations, quotId);
+    var allDocLinks = [];
+    if (q.QuotationDocUrl) allDocLinks.push(flink(q.QuotationDocUrl, '&#128196; Quotation Document'));
+    spAttachments.forEach(function(a){ allDocLinks.push(flink(a.url, '&#128206; '+a.name)); });
+    var docHtml = allDocLinks.length > 0
       ? '<div style="margin-top:14px;padding:12px;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:9px">'
-          + '<div style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">&#128206; Quotation Document</div>'
-          + flink(q.QuotationDocUrl, '&#128196; Download / View Quotation Document')
+          + '<div style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">&#128206; Documents &amp; Attachments</div>'
+          + '<div style="display:flex;flex-wrap:wrap;gap:8px">' + allDocLinks.join('') + '</div>'
           + '</div>'
-      : '<div style="margin-top:14px;padding:11px;background:#F8FAFC;border:1px solid var(--border);border-radius:9px;font-size:12.5px;color:var(--muted)">No document uploaded for this quotation</div>';
+      : '<div style="margin-top:14px;padding:11px;background:#F8FAFC;border:1px solid var(--border);border-radius:9px;font-size:12.5px;color:var(--muted)">&#128206; No documents uploaded — use the Docs button in Quotations table to attach files</div>';
 
     var selBtn = '';
     if (q.QuotationStatus !== 'Selected') {
@@ -2302,6 +2332,13 @@ function clearForm(modalName) {
     el.value = '';
   });
   // Reset quotation picker (Create PO modal)
+  window._poExcelFile = null;
+  const poZone = document.getElementById('po-excel-zone');
+  if (poZone) { poZone.classList.remove('done'); }
+  const poFn = document.getElementById('po-excel-fn');
+  if (poFn) poFn.innerHTML = '';
+  const poExcelFl = document.getElementById('po-excel-fl');
+  if (poExcelFl) poExcelFl.value = '';
   const quotList = document.getElementById('cp-quots-list');
   if (quotList) quotList.style.display = 'none';
   const quotCards = document.getElementById('cp-quots-cards');
@@ -2438,7 +2475,7 @@ async function subQut() {
       }
     }
 
-    toast('Quotation Saved', 'Quotation #'+id+' saved'+(fi&&fi.files[0]?' with document attached':''), 'ok');
+    toast('Quotation Saved', 'Quotation #'+id+' saved'+(fi&&fi.files[0]?' — document attached':'')+'  |  Use ID: '+id+' to create PO', 'ok');
     clearForm('add-quotation');
     closeM('add-quotation');
     refreshAll();
@@ -2454,22 +2491,34 @@ async function subPO() {
   const item   = document.getElementById('cp-it').value.trim();
   const qty    = Number(document.getElementById('cp-qt').value);
   const price  = Number(document.getElementById('cp-up').value);
-  if (!reqId||!quotId||!vendor||!item||!qty||!price) {
-    toast('Validation Error','Please fill all required fields. Make sure to select a quotation first.','warn'); return;
-  }
+  // Show specific missing field message
+  if (!vendor) { toast('Missing Field','Please enter Vendor Name','warn'); return; }
+  if (!item)   { toast('Missing Field','Please enter Item Description','warn'); return; }
+  if (!qty)    { toast('Missing Field','Please enter Quantity','warn'); return; }
+  if (!price)  { toast('Missing Field','Please enter Unit Price','warn'); return; }
+  // reqId and quotId optional — can create PO without selecting quotation
+  if (!reqId)  { toast('Note','No Request ID set — PO will not be linked to a request','warn'); }
+  if (!quotId) { toast('Note','No Quotation selected — PO created without quotation link','warn'); }
   const tax    = Number(document.getElementById('cp-tx').value)||0;
   const sub    = qty*price, taxAmt = sub*(tax/100), total = sub+taxAmt;
   const poNum  = genPO();
 
   // File will be uploaded AFTER PO item is created
+  // Also attach the Excel template if it was uploaded for parsing
   const fi = document.getElementById('cp-fl');
+  if (!fi.files[0] && window._poExcelFile) {
+    // Use the parsed Excel file as the PO document
+    const dt = new DataTransfer();
+    dt.items.add(window._poExcelFile);
+    fi.files = dt.files;
+  }
 
   // EXACT SharePoint PurchaseOrders columns from screenshot
   const fields = {
     Title:           poNum,
     PONumber:        poNum,
-    RequestItemId:   Number(reqId),
-    QuotationItemId: Number(quotId),
+    RequestItemId:   reqId ? Number(reqId) : 0,
+    QuotationItemId: quotId ? Number(quotId) : 0,
     VendorName:      vendor,
     ItemDescription: item,
     Quantity:        qty,
@@ -2487,8 +2536,8 @@ async function subPO() {
 
   try {
     const id = await gPostSafe(LISTS.POs, fields);
-    await gPatch(LISTS.Quotations, quotId, {QuotationStatus:'Selected'});
-    await gPatch(LISTS.Requests,   reqId,  {RequestStatus:'PO Created'});
+    if (quotId) { try { await gPatch(LISTS.Quotations, quotId, {QuotationStatus:'Selected'}); } catch(_) {} }
+    if (reqId)  { try { await gPatch(LISTS.Requests,   reqId,  {RequestStatus:'PO Created'}); } catch(_) {} }
 
     // Upload PO document and attach to the list item
     if (fi && fi.files[0]) {
@@ -2861,6 +2910,151 @@ async function selectQuotation(quotId, reqId, vendor, vendorEmail, unitPrice, qt
   } catch(e) { toast('Error',e.message,'err'); }
 }
 
+
+
+// ═══════════════════════════════════════════════════════
+// PARSE PO EXCEL TEMPLATE — auto-fill Create PO form
+// Based on Raffles Consolidated PO template structure
+// ═══════════════════════════════════════════════════════
+async function parsePOExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  document.getElementById('po-excel-fn').innerHTML = '<div class="uz-file">&#128202; Reading ' + file.name + '...</div>';
+  document.getElementById('po-excel-zone').classList.add('done');
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const wb     = XLSX.read(buffer, { type: 'array', cellText: true, cellDates: true });
+    const ws     = wb.Sheets[wb.SheetNames[0]];
+
+    // Convert sheet to 2D array for easy scanning
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+
+    var vendorName   = '';
+    var vendorEmail  = '';
+    var description  = '';
+    var qty          = '';
+    var unitPrice    = '';
+    var grandTotal   = '';
+    var poNumber     = '';
+    var poDate       = '';
+    var subTotal     = '';
+    var vatPct       = '';
+    var deliverTo    = '';
+    var comments     = '';
+
+    // Scan all rows for known field patterns
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      var rowStr = row.join('\t').toLowerCase();
+
+      // PO Number — look for "PO No." or "R/C/" pattern
+      for (var j = 0; j < row.length; j++) {
+        var cell = String(row[j] || '').trim();
+        if (cell.toLowerCase().includes('po no') && row[j+1]) {
+          poNumber = String(row[j+1]).trim();
+        }
+        if (cell.toLowerCase().includes('po date') && row[j+1]) {
+          poDate = String(row[j+1]).trim();
+        }
+        // Vendor: "TO" label followed by company name on next row
+        if (cell === 'TO' && rows[i+1]) {
+          vendorName = String(rows[i+1][j+1] || rows[i+1][j] || '').trim();
+        }
+        // Deliver To
+        if (cell === 'DELIVER TO' && rows[i+1]) {
+          deliverTo = String(rows[i+1][j+1] || rows[i+1][j] || '').trim();
+        }
+        // Email in vendor rows
+        if (cell.includes('@') && !vendorEmail) vendorEmail = cell;
+        // Grand Total
+        if (cell.toLowerCase().includes('grand total') && row[j+1]) {
+          grandTotal = String(row[j+1]).replace(/[^0-9.]/g,'').trim();
+        }
+        // Sub Total
+        if (cell.toLowerCase().includes('sub total') && row[j+1]) {
+          subTotal = String(row[j+1]).replace(/[^0-9.]/g,'').trim();
+        }
+        // VAT
+        if ((cell.toLowerCase().includes('vat') || cell.toLowerCase().includes('tax')) && row[j+1]) {
+          var vatVal = String(row[j+1]).replace(/[^0-9.]/g,'');
+          if (vatVal && !vatPct) vatPct = vatVal;
+        }
+        // Comments / special instructions
+        if (cell.toLowerCase().includes('comments') || cell.toLowerCase().includes('special')) {
+          if (rows[i+1]) comments = String(rows[i+1][j] || rows[i+1][j+1] || '').trim();
+        }
+      }
+
+      // Item description row — look for DESCRIPTION header then data row
+      if (rowStr.includes('description') && rowStr.includes('qty') && rowStr.includes('unit price')) {
+        // Next non-empty row is the item
+        for (var k = i+1; k < Math.min(i+10, rows.length); k++) {
+          var itemRow = rows[k];
+          if (!itemRow || itemRow.every(function(c){ return !c; })) continue;
+          // Find columns by header position
+          for (var h = 0; h < row.length; h++) {
+            var hdr = String(row[h] || '').toLowerCase().trim();
+            if (hdr === 'description' && itemRow[h]) description = String(itemRow[h]).trim();
+            if (hdr === 'qty' && itemRow[h]) qty = String(itemRow[h]).replace(/[^0-9.]/g,'').trim();
+            if (hdr.includes('unit price') && itemRow[h]) unitPrice = String(itemRow[h]).replace(/[^0-9.]/g,'').trim();
+          }
+          if (description) break;
+        }
+      }
+    }
+
+    // Calculate tax percentage from sub total and VAT amount
+    var taxPercent = 0;
+    if (subTotal && vatPct) {
+      var sub = parseFloat(subTotal);
+      var vat = parseFloat(vatPct);
+      if (sub > 0) taxPercent = Math.round((vat / sub) * 100);
+    }
+    if (!taxPercent) taxPercent = 18; // default VAT
+
+    // If grandTotal but no unitPrice/qty, estimate
+    if (grandTotal && !unitPrice && qty) {
+      var gt = parseFloat(grandTotal);
+      var q  = parseFloat(qty) || 1;
+      unitPrice = (gt / (1 + taxPercent/100) / q).toFixed(2);
+    }
+
+    // Fill the form fields
+    if (vendorName)  document.getElementById('cp-vn').value = vendorName;
+    if (vendorEmail) document.getElementById('cp-ve').value = vendorEmail;
+    if (description) document.getElementById('cp-it').value = description;
+    if (qty)         document.getElementById('cp-qt').value = qty;
+    if (unitPrice)   document.getElementById('cp-up').value = unitPrice;
+    if (taxPercent)  document.getElementById('cp-tx').value = taxPercent;
+    if (deliverTo)   document.getElementById('cp-ad').value = deliverTo;
+    if (comments)    document.getElementById('cp-re').value = comments;
+    cPO(); // recalculate totals
+
+    // Show what was found
+    var found = [];
+    if (vendorName)  found.push('Vendor: ' + vendorName);
+    if (description) found.push('Item: ' + description);
+    if (qty)         found.push('Qty: ' + qty);
+    if (unitPrice)   found.push('Unit Price: LKR ' + unitPrice);
+    if (grandTotal)  found.push('Grand Total: LKR ' + grandTotal);
+
+    document.getElementById('po-excel-fn').innerHTML =
+      '<div style="margin-top:8px;padding:8px 12px;background:#DCFCE7;border-radius:7px;font-size:12px;color:#065F46">' +
+      '&#9989; Auto-filled: ' + (found.length > 0 ? found.join(' | ') : 'No data found — please fill manually') +
+      '</div>';
+
+    toast('Excel Parsed', 'Form filled from PO template. Review and adjust as needed.', 'ok');
+
+    // Also keep the file for upload when PO is created
+    window._poExcelFile = file;
+
+  } catch(e) {
+    document.getElementById('po-excel-fn').innerHTML = '<div style="color:var(--red);font-size:12px">&#10060; Parse error: ' + e.message + '</div>';
+    toast('Parse Error', e.message, 'err');
+  }
+}
 
 // ═══════════════════════════════════════════════════
 // CREATE PO — QUOTATION PICKER
